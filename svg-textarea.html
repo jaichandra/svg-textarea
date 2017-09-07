@@ -1,0 +1,235 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="svg-textarea">
+  <template>
+    <style>
+       :host {
+        display: flex;
+        align-items: left;
+        font-size: 20px;
+        position: relative;
+      }
+
+      #textarea {
+        border: none;
+        overflow: auto;
+        position: absolute;
+        min-width: 20px;
+        min-height: 25px;
+        /* DO NOT EDIT 
+          padding required to show edit cursor when mouse is on the top left corner
+        */
+        padding: 2px;
+        /* *********** */
+        resize: none;
+
+        /*** DO NOT EDIT ***/
+        /* Chrome; W3C standard */
+        white-space: pre-wrap;
+        /* *************** */
+      }
+
+      #textarea:focus {
+        border: 0 none #FFF;
+        overflow: hidden;
+        outline: none;
+      }
+
+      #svgcontent {
+        /* padding: 1rem; */
+        overflow: visible;
+        padding: 2px;
+      }
+    </style>
+    <div id="textarea" contenteditable="true" on-blur="handleBlur" on-click="makeEditable"></div>
+
+    <svg id="svgcontent" width="100%" height="100%" style="outline: 1px solid red;">
+      <text id="svgtext" x="0" y="0"></text>
+    </svg>
+  </template>
+
+  <script src="../FontMetrics/output/FontMetrics.min.js"></script>
+  <script>
+    const metrics = FontMetrics({
+      fontFamily: 'Roboto',
+      // Optional (defaults)
+      fontWeight: 'normal',
+      fontSize: 20,
+      origin: 'baseline'
+    })
+
+    // console.log('metrics', metrics);
+    /**
+     * `svg-textarea`
+     * SVG textarea element
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class SvgTextarea extends Polymer.Element {
+      static get is() { return 'svg-textarea'; }
+      static get properties() {
+        return {
+          svg: {
+            type: String
+          },
+          lineHeight: {
+            value: 0 // set initial vertical position
+          },
+          baseline: {
+            value: 0
+          }
+
+        };
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.$.textarea.addEventListener("paste", function (e) {
+          e.preventDefault();
+          var text = e.clipboardData.getData("text/plain");
+          document.execCommand("insertHTML", false, text);
+        });
+      }
+
+      handleBlur(e) {
+        // console.log(this.$.textarea.textContent);
+        this.parseText();
+      }
+
+      parseText() {
+        this.$.textarea.style.opacity = 0;
+
+        this.clearSVG();
+
+        // calculate font metrics
+        this.baseline = Math.abs(metrics.top) * metrics.fontSize;
+        /////////////////
+
+        let formattedContent = this.ApplyLineBreaks();
+
+        let textLines = formattedContent.split('<br>');
+        let counter = 0;
+        textLines.map(key => {
+          if (key !== '') {
+            this.addText(key, counter === 0 ? true : false);
+          }
+          counter++;
+        });
+      }
+
+      addText(node, isFirst) {
+        // get text value from the input
+        var myText = node;
+        // create a new text node to add to the SVG block
+        var newText = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+
+        newText.appendChild(document.createTextNode(myText));
+        this.$.svgtext.appendChild(newText);
+
+        this.lineHeight = this.lineHeight || newText.getClientRects()[0].height;
+        newText.setAttributeNS(null, "x", "0");
+        newText.setAttributeNS(null, "dy", isFirst ? this.baseline : this.lineHeight);
+        // add the text node to the SVG element
+        // debugger;
+        // empty the form fieldset & give it focus
+        // document.getElementById('blabla').value = '';
+        // document.getElementById('blabla').focus();
+      }
+
+      makeEditable() {
+        this.$.textarea.style.opacity = 1;
+        this.clearSVG();
+        // this.$.textarea.focus();
+      }
+
+      clearSVG() {
+        while (this.$.svgtext.lastChild) {
+          this.$.svgtext.removeChild(this.$.svgtext.lastChild);
+        }
+      }
+
+      ApplyLineBreaks() {
+        var oTextarea = this.$.textarea;
+        // if (oTextarea.wrap) {
+        //   oTextarea.setStyle("word-wrap", "pre");
+        // }
+        // else {
+        // oTextarea.style.whiteSpace = "pre";
+        // var newArea = oTextarea.cloneNode(true);
+        // newArea.textContent = oTextarea.textContent;
+        // oTextarea.parentNode.replaceChild(newArea, oTextarea);
+        // oTextarea = newArea;
+        // }
+
+        var strRawValue = oTextarea.textContent;
+        var nEmptyWidth = oTextarea.scrollWidth;
+
+        oTextarea.style.whiteSpace = "pre";
+        oTextarea.textContent = "";
+
+        var nLastWrappingIndex = -1;
+
+        function testBreak(strTest) {
+          oTextarea.textContent = strTest;
+          return oTextarea.scrollWidth > nEmptyWidth;
+        }
+        function findNextBreakLength(strSource, nLeft, nRight) {
+          var nCurrent;
+          if (typeof (nLeft) == 'undefined') {
+            nLeft = 0;
+            nRight = -1;
+            nCurrent = 64;
+          }
+          else {
+            if (nRight == -1)
+              nCurrent = nLeft * 2;
+            else if (nRight - nLeft <= 1)
+              return Math.max(2, nRight);
+            else
+              nCurrent = nLeft + (nRight - nLeft) / 2;
+          }
+          var strTest = strSource.substr(0, nCurrent);
+          var bLonger = testBreak(strTest);
+          if (bLonger)
+            nRight = nCurrent;
+          else {
+            if (nCurrent >= strSource.length)
+              return null;
+            nLeft = nCurrent;
+          }
+          return findNextBreakLength(strSource, nLeft, nRight);
+        }
+
+        var i = 0, j;
+        var strNewValue = "";
+        while (i < strRawValue.length) {
+          var breakOffset = findNextBreakLength(strRawValue.substr(i));
+          if (breakOffset === null) {
+            strNewValue += strRawValue.substr(i);
+            break;
+          }
+          nLastWrappingIndex = -1;
+          var nLineLength = breakOffset - 1;
+          for (j = nLineLength - 1; j >= 0; j--) {
+            var curChar = strRawValue.charAt(i + j);
+            if (curChar == ' ' || curChar == '-' || curChar == '+') {
+              nLineLength = j + 1;
+              break;
+            }
+          }
+          strNewValue += strRawValue.substr(i, nLineLength) + "\n";
+          i += nLineLength;
+        }
+        oTextarea.style.whiteSpace = "pre-wrap";
+        return strNewValue.replace(new RegExp("\\n", "g"), "<br>");
+        // oTextarea.value = strNewValue;
+        // oTextarea.setAttribute("wrap", "");
+        // document.getElementById("pnlPreview").innerHTML = oTextarea.value.replace(new RegExp("\\n", "g"), "<br />");
+      }
+    }
+
+    window.customElements.define(SvgTextarea.is, SvgTextarea);
+  </script>
+</dom-module>
