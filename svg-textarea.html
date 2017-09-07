@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="fontmetrics.html">
 
 <dom-module id="svg-textarea">
   <template>
@@ -6,7 +7,7 @@
        :host {
         display: flex;
         align-items: left;
-        font-size: 20px;
+        font-size: 50px;
         position: relative;
       }
 
@@ -36,9 +37,12 @@
       }
 
       #svgcontent {
-        /* padding: 1rem; */
         overflow: visible;
         padding: 2px;
+      }
+
+      #svgcontent tspan {
+        white-space: pre;
       }
     </style>
     <div id="textarea" contenteditable="true" on-blur="handleBlur" on-click="makeEditable"></div>
@@ -48,25 +52,19 @@
     </svg>
   </template>
 
-  <script src="../FontMetrics/output/FontMetrics.min.js"></script>
-  <script>
-    const metrics = FontMetrics({
-      fontFamily: 'Roboto',
-      // Optional (defaults)
-      fontWeight: 'normal',
-      fontSize: 20,
-      origin: 'baseline'
-    })
 
-    // console.log('metrics', metrics);
+  <script>
+    // function fontmetricsLoaded() {
+    console.log('fontmetricsLoaded');
+
     /**
-     * `svg-textarea`
-     * SVG textarea element
-     *
-     * @customElement
-     * @polymer
-     * @demo demo/index.html
-     */
+    * `svg-textarea`
+    * SVG textarea element
+    *
+    * @customElement
+    * @polymer
+    * @demo demo/index.html
+    */
     class SvgTextarea extends Polymer.Element {
       static get is() { return 'svg-textarea'; }
       static get properties() {
@@ -79,6 +77,9 @@
           },
           baseline: {
             value: 0
+          },
+          metrics: {
+            value: {}
           }
 
         };
@@ -86,6 +87,15 @@
 
       connectedCallback() {
         super.connectedCallback();
+
+        this.metrics = FontMetrics({
+          fontFamily: 'Roboto',
+          // Optional (defaults)
+          fontWeight: 'normal',
+          fontSize: 50,
+          origin: 'top'
+        })
+        console.log('metrics', this.metrics);
         this.$.textarea.addEventListener("paste", function (e) {
           e.preventDefault();
           var text = e.clipboardData.getData("text/plain");
@@ -93,8 +103,31 @@
         });
       }
 
+      getBrowser() {
+        var sBrowser, sUsrAg = navigator.userAgent;
+
+        if (sUsrAg.indexOf("Chrome") > -1) {
+          sBrowser = "Google Chrome";
+        } else if (sUsrAg.indexOf("Safari") > -1) {
+          sBrowser = "Apple Safari";
+        } else if (sUsrAg.indexOf("Opera") > -1) {
+          sBrowser = "Opera";
+        } else if (sUsrAg.indexOf("Firefox") > -1) {
+          sBrowser = "Mozilla Firefox";
+        } else if (sUsrAg.indexOf("MSIE") > -1) {
+          sBrowser = "Microsoft Internet Explorer";
+        }
+        return sBrowser;
+      }
+
+      ifFirefox() {
+        return this.getBrowser() === 'Mozilla Firefox'
+      }
+
       handleBlur(e) {
         // console.log(this.$.textarea.textContent);
+        // console.log(this.$.textarea.innerText);
+        // console.log(this.$.textarea.innerHTML);
         this.parseText();
       }
 
@@ -103,11 +136,13 @@
 
         this.clearSVG();
 
-        // calculate font metrics
-        this.baseline = Math.abs(metrics.top) * metrics.fontSize;
+        // Calculate the baseline for first tspan
+        this.baseline = Math.abs(this.metrics.baseline) * this.metrics.fontSize;
         /////////////////
 
         let formattedContent = this.ApplyLineBreaks();
+
+        console.log(formattedContent);
 
         let textLines = formattedContent.split('<br>');
         let counter = 0;
@@ -129,8 +164,9 @@
         this.$.svgtext.appendChild(newText);
 
         this.lineHeight = this.lineHeight || newText.getClientRects()[0].height;
+
         newText.setAttributeNS(null, "x", "0");
-        newText.setAttributeNS(null, "dy", isFirst ? this.baseline : this.lineHeight);
+        newText.setAttributeNS(null, "dy", (isFirst && !this.ifFirefox()) ? this.baseline : this.lineHeight);
         // add the text node to the SVG element
         // debugger;
         // empty the form fieldset & give it focus
@@ -158,21 +194,21 @@
         // else {
         // oTextarea.style.whiteSpace = "pre";
         // var newArea = oTextarea.cloneNode(true);
-        // newArea.textContent = oTextarea.textContent;
+        // newArea.innerText = oTextarea.innerText;
         // oTextarea.parentNode.replaceChild(newArea, oTextarea);
         // oTextarea = newArea;
         // }
 
-        var strRawValue = oTextarea.textContent;
+        var strRawValue = oTextarea.innerText;
         var nEmptyWidth = oTextarea.scrollWidth;
 
         oTextarea.style.whiteSpace = "pre";
-        oTextarea.textContent = "";
+        oTextarea.innerText = "";
 
         var nLastWrappingIndex = -1;
 
         function testBreak(strTest) {
-          oTextarea.textContent = strTest;
+          oTextarea.innerText = strTest;
           return oTextarea.scrollWidth > nEmptyWidth;
         }
         function findNextBreakLength(strSource, nLeft, nRight) {
@@ -231,5 +267,7 @@
     }
 
     window.customElements.define(SvgTextarea.is, SvgTextarea);
+
+    // }
   </script>
 </dom-module>
