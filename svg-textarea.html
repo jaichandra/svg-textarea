@@ -12,23 +12,31 @@
       }
 
       #textarea {
-        border: none;
+
+        /* border: none; */
         overflow: auto;
         position: absolute;
         min-width: 20px;
-        min-height: 25px;
+        /* min-height: 25px; */
         /* DO NOT EDIT 
           padding required to show edit cursor when mouse is on the top left corner
         */
         padding: 2px;
         /* *********** */
         resize: none;
-
         /*** DO NOT EDIT ***/
         /* Chrome; W3C standard */
         white-space: pre-wrap;
         /* *************** */
       }
+      /* #textarea p {
+        line-height: 0px;
+      } */
+      /* IE11 fix */
+      /* #textarea p:first-child {
+        margin-top: 1.9rem;
+      } */
+      /* IE11 fix (https://stackoverflow.com/questions/2057881/avoid-ie-contenteditable-element-to-create-paragraphs-on-enter-key) */
 
       #textarea:focus {
         border: 0 none #FFF;
@@ -55,7 +63,7 @@
 
   <script>
     // function fontmetricsLoaded() {
-    console.log('fontmetricsLoaded');
+    // console.log('fontmetricsLoaded');
 
     /**
     * `svg-textarea`
@@ -101,6 +109,26 @@
           var text = e.clipboardData.getData("text/plain");
           document.execCommand("insertHTML", false, text);
         });
+
+        // var o = this;
+        // this.$.textarea.addEventListener("keypress", function (e) {
+        //   if (e.which == 13) {
+        //     // e.preventDefault();
+        //     // let r = document.getSelection().getRangeAt(0);
+        //     // let node = r.createContextualFragment("<br>");
+        //     // r.insertNode(node);
+        //     // // Move the caret after the BR
+        //     // var range = document.createRange();
+        //     // var sel = window.getSelection();
+        //     // range.setStart(e.target.childNodes[1], 0);
+        //     // range.collapse(true);
+        //     // sel.removeAllRanges();
+        //     // sel.addRange(range);
+        //     // console.log(o.$.textarea.innerHTML);
+        //   }
+        // });
+
+        // this.$.textarea.innerHTML = '<div></div>';
       }
 
       getBrowser() {
@@ -114,14 +142,17 @@
           sBrowser = "Opera";
         } else if (sUsrAg.indexOf("Firefox") > -1) {
           sBrowser = "Mozilla Firefox";
-        } else if (sUsrAg.indexOf("MSIE") > -1) {
+        } else if (sUsrAg.indexOf("MSIE") > -1 || sUsrAg.indexOf("Mozilla/5.0") > -1) {
           sBrowser = "Microsoft Internet Explorer";
         }
         return sBrowser;
       }
 
-      ifFirefox() {
+      isFirefox() {
         return this.getBrowser() === 'Mozilla Firefox'
+      }
+      isIE() {
+        return this.getBrowser() === 'Microsoft Internet Explorer'
       }
 
       handleBlur(e) {
@@ -132,7 +163,15 @@
       }
 
       parseText() {
-        this.$.textarea.style.opacity = 0;
+        // handle IE bug where <p> tags are added instead of <br>
+        // if (this.isIE()) {
+        //   let $newcontent = this.$.textarea.innerHTML.replace(/<p[^>]*?>/g, "");
+        //   $newcontent = $newcontent.replace(/<\/p>/g, "<br>");
+        //   this.$.textarea.innerHTML = $newcontent;
+        // }
+        // ======================================================
+
+        this.showTextarea(false);
 
         this.clearSVG();
 
@@ -141,8 +180,7 @@
         /////////////////
 
         let formattedContent = this.ApplyLineBreaks();
-
-        console.log(formattedContent);
+        // console.log(formattedContent);
 
         let textLines = formattedContent.split('<br>');
         let counter = 0;
@@ -165,8 +203,11 @@
 
         this.lineHeight = this.lineHeight || newText.getClientRects()[0].height;
 
+        // debugger;
+        // newText.setAttributeNS(null, "alignment-baseline", "text-before-edge");
         newText.setAttributeNS(null, "x", "0");
-        newText.setAttributeNS(null, "dy", (isFirst && !this.ifFirefox()) ? this.baseline : this.lineHeight);
+        // newText.setAttributeNS(null, "dy", (isFirst && !this.isFirefox()) ? this.baseline : this.lineHeight);
+        newText.setAttributeNS(null, "dy", (isFirst) ? this.baseline : this.lineHeight);
         // add the text node to the SVG element
         // debugger;
         // empty the form fieldset & give it focus
@@ -175,9 +216,14 @@
       }
 
       makeEditable() {
-        this.$.textarea.style.opacity = 1;
+        // console.log(this.$.textarea.innerHTML);
+        this.showTextarea(true);
         this.clearSVG();
         // this.$.textarea.focus();
+      }
+
+      showTextarea(flag) {
+        this.$.textarea.style.opacity = flag ? 1 : 0;
       }
 
       clearSVG() {
@@ -204,7 +250,6 @@
 
         oTextarea.style.whiteSpace = "pre";
         oTextarea.innerText = "";
-
         var nLastWrappingIndex = -1;
 
         function testBreak(strTest) {
