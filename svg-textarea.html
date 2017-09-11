@@ -7,26 +7,30 @@
        :host {
         display: flex;
         align-items: left;
-        font-size: 50px;
+        font-size: var(--font-size, inherit);
         position: relative;
       }
 
       #textarea {
-
-        /* border: none; */
-        overflow: auto;
+        font-family: inherit;
+        font-size: inherit;
+        border: 0px solid #000;
+        /* overflow: auto; */
         position: absolute;
-        min-width: 20px;
+        width: 100%;
+        background: transparent;
+        /* width: 250px; */
         /* min-height: 25px; */
         /* DO NOT EDIT 
           padding required to show edit cursor when mouse is on the top left corner
         */
-        padding: 2px;
+        padding: 0px;
+        line-height: 1.2;
         /* *********** */
         resize: none;
         /*** DO NOT EDIT ***/
         /* Chrome; W3C standard */
-        white-space: pre-wrap;
+        /* white-space: pre-wrap; */
         /* *************** */
       }
       /* #textarea p {
@@ -39,32 +43,30 @@
       /* IE11 fix (https://stackoverflow.com/questions/2057881/avoid-ie-contenteditable-element-to-create-paragraphs-on-enter-key) */
 
       #textarea:focus {
-        border: 0 none #FFF;
+        border: 0px solid #000;
         overflow: hidden;
         outline: none;
       }
 
       #svgcontent {
         overflow: visible;
-        padding: 2px;
+        padding: 0px;
       }
 
       #svgcontent tspan {
         white-space: pre;
       }
     </style>
-    <div id="textarea" contenteditable="true" on-blur="handleBlur" on-click="makeEditable"></div>
+    <!-- <div id="textarea" contenteditable="true" on-blur="handleBlur" on-click="makeEditable"></div> -->
+    <textarea id="textarea" on-blur="handleBlur" on-click="makeEditable" on-input="resizeTextarea"></textarea>
 
     <svg id="svgcontent" width="100%" height="100%" style="outline: 1px solid red;">
-      <text id="svgtext" x="0" y="0"></text>
+      <!-- <text id="svgtext" x="0" y="0"></text> -->
     </svg>
   </template>
 
 
   <script>
-    // function fontmetricsLoaded() {
-    // console.log('fontmetricsLoaded');
-
     /**
     * `svg-textarea`
     * SVG textarea element
@@ -80,14 +82,29 @@
           svg: {
             type: String
           },
+          maxHeight: {
+            value: 1000
+          },
           lineHeight: {
-            value: 0 // set initial vertical position
+            value: 1.2 // set initial vertical position
+          },
+          fontSize: {
+            value: 13
           },
           baseline: {
             value: 0
           },
           metrics: {
             value: {}
+          },
+          computedFontSize: {
+            value: 0
+          },
+          computedLineHeight: {
+            value: 0
+          },
+          lineY: {
+            value: 0
           }
 
         };
@@ -96,39 +113,36 @@
       connectedCallback() {
         super.connectedCallback();
 
+        // set dynamic styles from the properties
+        this.$.textarea.style.lineHeight = this.lineHeight;
+        if (this.fontSize > 0) {
+          this.updateStyles({ '--font-size': this.fontSize + 'px' });
+        } else {
+          // get the inherited textarea font-size
+          if (window.ShadyCSS) {
+            this.fontSize = parseInt(ShadyCSS.getComputedStyleValue(this.$.textarea, 'font-size'));
+          } else {
+            this.fontSize = parseInt(getComputedStyle(this.$.textarea).getPropertyValue('font-size'));
+          }
+        }
+
+        // calculate fontmetrics based on computed fontsize
         this.metrics = FontMetrics({
           fontFamily: 'Roboto',
           // Optional (defaults)
           fontWeight: 'normal',
-          fontSize: 50,
+          fontSize: this.fontSize,
           origin: 'top'
         })
         console.log('metrics', this.metrics);
-        this.$.textarea.addEventListener("paste", function (e) {
-          e.preventDefault();
-          var text = e.clipboardData.getData("text/plain");
-          document.execCommand("insertHTML", false, text);
-        });
+        /////////////////////////////////////
 
-        // var o = this;
-        // this.$.textarea.addEventListener("keypress", function (e) {
-        //   if (e.which == 13) {
-        //     // e.preventDefault();
-        //     // let r = document.getSelection().getRangeAt(0);
-        //     // let node = r.createContextualFragment("<br>");
-        //     // r.insertNode(node);
-        //     // // Move the caret after the BR
-        //     // var range = document.createRange();
-        //     // var sel = window.getSelection();
-        //     // range.setStart(e.target.childNodes[1], 0);
-        //     // range.collapse(true);
-        //     // sel.removeAllRanges();
-        //     // sel.addRange(range);
-        //     // console.log(o.$.textarea.innerHTML);
-        //   }
+        // this.$.textarea.addEventListener("paste", function (e) {
+        //   e.preventDefault();
+        //   var text = e.clipboardData.getData("text/plain");
+        //   document.execCommand("insertHTML", false, text);
         // });
 
-        // this.$.textarea.innerHTML = '<div></div>';
       }
 
       getBrowser() {
@@ -149,20 +163,35 @@
       }
 
       isFirefox() {
-        return this.getBrowser() === 'Mozilla Firefox'
+        return this.getBrowser() === 'Mozilla Firefox';
       }
+
+      isChrome() {
+        return this.getBrowser() === 'Google Chrome';
+      }
+
       isIE() {
-        return this.getBrowser() === 'Microsoft Internet Explorer'
+        return this.getBrowser() === 'Microsoft Internet Explorer';
       }
 
       handleBlur(e) {
-        // console.log(this.$.textarea.textContent);
-        // console.log(this.$.textarea.innerText);
-        // console.log(this.$.textarea.innerHTML);
         this.parseText();
       }
 
+      makeEditable() {
+        console.log('makeeditable');
+        this.showTextarea(true);
+        this.clearSVG();
+      }
+
+      resizeTextarea() {
+        this.$.textarea.style.height = "";
+        this.$.textarea.style.height = Math.min(this.$.textarea.scrollHeight, this.maxHeight) + "px";
+      }
+
       parseText() {
+        this.lineY = 0;
+
         // handle IE bug where <p> tags are added instead of <br>
         // if (this.isIE()) {
         //   let $newcontent = this.$.textarea.innerHTML.replace(/<p[^>]*?>/g, "");
@@ -176,18 +205,35 @@
         this.clearSVG();
 
         // Calculate the baseline for first tspan
-        this.baseline = Math.abs(this.metrics.baseline) * this.metrics.fontSize;
+        if (this.isFirefox()) {
+          this.baseline = this.fontSize;
+        } else {
+          this.baseline = ((this.metrics.baseline) * this.metrics.fontSize);
+        }
         /////////////////
 
         let formattedContent = this.ApplyLineBreaks();
-        // console.log(formattedContent);
+        console.log(formattedContent);
 
-        let textLines = formattedContent.split('<br>');
+        let textLines = formattedContent.split('\n');
+
+        // The line-height is inconsistent in firefox and possibly other browsers (except Chrome). The line-height
+        // changes depending on the # of lines in the textarea. Therefore, it can't be assumed as (this.fontSize * this.lineHeight)
+        // all the time. Hence calculating based on the number of lines in the textarea.        
+        // this.computedLineHeight = this.computedLineHeight || (this.fontSize * this.lineHeight);
+        this.computedLineHeight = (parseInt(this.$.textarea.style.height) || 0) / textLines.length;
+        console.log('computedLineHeight', this.computedLineHeight);
+
+        if (this.isChrome()) {
+          // this.computedLineHeight = Math.floor(this.computedLineHeight);
+        } else if (this.isFirefox()) {
+          // this.computedLineHeight = Math.round(this.computedLineHeight);
+        }
+        ///////////////
+
         let counter = 0;
         textLines.map(key => {
-          if (key !== '') {
-            this.addText(key, counter === 0 ? true : false);
-          }
+          this.addText(key, counter === 0 ? true : false);
           counter++;
         });
       }
@@ -195,19 +241,25 @@
       addText(node, isFirst) {
         // get text value from the input
         var myText = node;
-        // create a new text node to add to the SVG block
-        var newText = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-
+        // create a new tspan node to add to the SVG text block
+        // var newText = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+        // newText.appendChild(document.createTextNode(myText));
+        // this.$.svgtext.appendChild(newText);
+        var newText = document.createElementNS("http://www.w3.org/2000/svg", "text");
         newText.appendChild(document.createTextNode(myText));
-        this.$.svgtext.appendChild(newText);
+        this.$.svgcontent.appendChild(newText);
 
-        this.lineHeight = this.lineHeight || newText.getClientRects()[0].height;
 
-        // debugger;
-        // newText.setAttributeNS(null, "alignment-baseline", "text-before-edge");
+
+        this.lineY += (isFirst) ? this.baseline : this.computedLineHeight;
+
         newText.setAttributeNS(null, "x", "0");
-        // newText.setAttributeNS(null, "dy", (isFirst && !this.isFirefox()) ? this.baseline : this.lineHeight);
-        newText.setAttributeNS(null, "dy", (isFirst) ? this.baseline : this.lineHeight);
+        // newText.setAttributeNS(null, "dy", (isFirst) ? this.baseline : this.computedLineHeight);
+
+        newText.setAttributeNS(null, "y", this.lineY);
+        // newText.setAttributeNS(null, "text-anchor", "start");
+
+
         // add the text node to the SVG element
         // debugger;
         // empty the form fieldset & give it focus
@@ -215,45 +267,41 @@
         // document.getElementById('blabla').focus();
       }
 
-      makeEditable() {
-        // console.log(this.$.textarea.innerHTML);
-        this.showTextarea(true);
-        this.clearSVG();
-        // this.$.textarea.focus();
-      }
-
       showTextarea(flag) {
         this.$.textarea.style.opacity = flag ? 1 : 0;
+        console.log('this.$.textarea.style.opacity', this.$.textarea.style.opacity);
       }
 
       clearSVG() {
-        while (this.$.svgtext.lastChild) {
-          this.$.svgtext.removeChild(this.$.svgtext.lastChild);
+        while (this.$.svgcontent.lastChild) {
+          this.$.svgcontent.removeChild(this.$.svgcontent.lastChild);
         }
       }
 
       ApplyLineBreaks() {
         var oTextarea = this.$.textarea;
         // if (oTextarea.wrap) {
-        //   oTextarea.setStyle("word-wrap", "pre");
+        oTextarea.setAttribute("wrap", "off");
         // }
         // else {
-        // oTextarea.style.whiteSpace = "pre";
+        // oTextarea.setAttribute("wrap", "off");
         // var newArea = oTextarea.cloneNode(true);
-        // newArea.innerText = oTextarea.innerText;
+        // newArea.value = oTextarea.value;
         // oTextarea.parentNode.replaceChild(newArea, oTextarea);
         // oTextarea = newArea;
         // }
 
-        var strRawValue = oTextarea.innerText;
+        var strRawValue = oTextarea.value;
+        oTextarea.value = "";
         var nEmptyWidth = oTextarea.scrollWidth;
 
-        oTextarea.style.whiteSpace = "pre";
-        oTextarea.innerText = "";
+        // oTextarea.style.whiteSpace = "pre";
+        // oTextarea.setAttribute("wrap", "off");
+
         var nLastWrappingIndex = -1;
 
         function testBreak(strTest) {
-          oTextarea.innerText = strTest;
+          oTextarea.value = strTest;
           return oTextarea.scrollWidth > nEmptyWidth;
         }
         function findNextBreakLength(strSource, nLeft, nRight) {
@@ -303,16 +351,15 @@
           strNewValue += strRawValue.substr(i, nLineLength) + "\n";
           i += nLineLength;
         }
-        oTextarea.style.whiteSpace = "pre-wrap";
-        return strNewValue.replace(new RegExp("\\n", "g"), "<br>");
-        // oTextarea.value = strNewValue;
-        // oTextarea.setAttribute("wrap", "");
+        // oTextarea.style.whiteSpace = "pre-wrap";
+        // return strNewValue;//.replace(new RegExp("\\n", "g"), "<br>");
+        oTextarea.value = strNewValue;
+        oTextarea.setAttribute("wrap", "");
         // document.getElementById("pnlPreview").innerHTML = oTextarea.value.replace(new RegExp("\\n", "g"), "<br />");
+        return strNewValue;
       }
     }
 
     window.customElements.define(SvgTextarea.is, SvgTextarea);
-
-    // }
   </script>
 </dom-module>
