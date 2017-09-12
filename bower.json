@@ -4,7 +4,8 @@
   "main": "svg-textarea.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^2.0.0",
-    "FontMetrics": "soulwire/FontMetrics"
+    "FontMetrics": "soulwire/FontMetrics",
+    "Font.js": "Pomax/Font.js"
   },
   "devDependencies": {
     "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^2.0.0",

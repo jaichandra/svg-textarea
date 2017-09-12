@@ -1,51 +1,30 @@
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="fontmetrics.html">
+<link rel="import" href="font.js.html">
 
 <dom-module id="svg-textarea">
   <template>
     <style>
        :host {
-        display: flex;
-        align-items: left;
-        font-size: var(--font-size, inherit);
+        display: block;
         position: relative;
+        font-size: var(--svg-textarea-font-size, inherit);
+        height: var(--svg-textarea-height);
       }
 
       #textarea {
         font-family: inherit;
         font-size: inherit;
         border: 0px solid #000;
-        /* overflow: auto; */
-        position: absolute;
-        width: 100%;
-        background: transparent;
-        /* width: 250px; */
-        /* min-height: 25px; */
-        /* DO NOT EDIT 
-          padding required to show edit cursor when mouse is on the top left corner
-        */
-        padding: 0px;
-        line-height: 1.2;
-        /* *********** */
-        resize: none;
-        /*** DO NOT EDIT ***/
-        /* Chrome; W3C standard */
-        /* white-space: pre-wrap; */
-        /* *************** */
-      }
-      /* #textarea p {
-        line-height: 0px;
-      } */
-      /* IE11 fix */
-      /* #textarea p:first-child {
-        margin-top: 1.9rem;
-      } */
-      /* IE11 fix (https://stackoverflow.com/questions/2057881/avoid-ie-contenteditable-element-to-create-paragraphs-on-enter-key) */
-
-      #textarea:focus {
-        border: 0px solid #000;
         overflow: hidden;
+        position: absolute;
         outline: none;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        transform: none;
+        line-height: 1.2;
+        resize: none;
       }
 
       #svgcontent {
@@ -57,11 +36,9 @@
         white-space: pre;
       }
     </style>
-    <!-- <div id="textarea" contenteditable="true" on-blur="handleBlur" on-click="makeEditable"></div> -->
-    <textarea id="textarea" on-blur="handleBlur" on-click="makeEditable" on-input="resizeTextarea"></textarea>
-
-    <svg id="svgcontent" width="100%" height="100%" style="outline: 1px solid red;">
-      <!-- <text id="svgtext" x="0" y="0"></text> -->
+    <textarea rows="1" id="textarea" on-blur="handleBlur" on-click="makeEditable" on-input="resizeTextarea"></textarea>
+    <svg id="svgcontent" width="100%">
+      <text id="svgtext"></text>
     </svg>
   </template>
 
@@ -69,7 +46,7 @@
   <script>
     /**
     * `svg-textarea`
-    * SVG textarea element
+    * SVG textarea element that supports multi-line edit
     *
     * @customElement
     * @polymer
@@ -89,7 +66,7 @@
             value: 1.2 // set initial vertical position
           },
           fontSize: {
-            value: 13
+            value: 14
           },
           baseline: {
             value: 0
@@ -97,26 +74,35 @@
           metrics: {
             value: {}
           },
-          computedFontSize: {
-            value: 0
-          },
           computedLineHeight: {
             value: 0
           },
-          lineY: {
+          // lineY: {
+          //   value: 0
+          // },
+          lineHeightBasedOnFontsize: {
             value: 0
+          },
+          os: {
+            value: { isMac: false, isWin: false, isUnix: false, isLinux: false }
+          },
+          browser: {
+            value: { isIE: false, isChrome: false, isFirefox: false, isSafari: false, isOpera: false }
           }
-
         };
       }
 
       connectedCallback() {
         super.connectedCallback();
 
-        // set dynamic styles from the properties
+        this.getOS();
+        this.getBrowser();
+
+        // set dynamic styles from the properties        
+        // this.updateStyles({ '--svg-textarea-height': this.$.textarea.scrollHeight + 'px' });
         this.$.textarea.style.lineHeight = this.lineHeight;
         if (this.fontSize > 0) {
-          this.updateStyles({ '--font-size': this.fontSize + 'px' });
+          this.updateStyles({ '--svg-textarea-font-size': this.fontSize + 'px' });
         } else {
           // get the inherited textarea font-size
           if (window.ShadyCSS) {
@@ -125,8 +111,11 @@
             this.fontSize = parseInt(getComputedStyle(this.$.textarea).getPropertyValue('font-size'));
           }
         }
+        this.resizeTextarea();
+        this.lineHeightBasedOnFontsize = this.lineHeightBasedOnFontsize || this.fontSize * this.lineHeight;
 
         // calculate fontmetrics based on computed fontsize
+        console.time('FontMetrics');
         this.metrics = FontMetrics({
           fontFamily: 'Roboto',
           // Optional (defaults)
@@ -134,44 +123,38 @@
           fontSize: this.fontSize,
           origin: 'top'
         })
+        console.timeEnd('FontMetrics');
         console.log('metrics', this.metrics);
-        /////////////////////////////////////
+        ///////////////////////////////
+      }
 
-        // this.$.textarea.addEventListener("paste", function (e) {
-        //   e.preventDefault();
-        //   var text = e.clipboardData.getData("text/plain");
-        //   document.execCommand("insertHTML", false, text);
-        // });
-
+      getOS() {
+        let sAppVer = navigator.appVersion;
+        if (sAppVer.indexOf("Win") != -1) {
+          this.os.isWin = true;
+        } else if (sAppVer.indexOf("Mac") != -1) {
+          this.os.isMac = true;
+        } else if (sAppVer.indexOf("X11") != -1) {
+          this.os.isUnix = true;
+        } else if (sAppVer.indexOf("Linux") != -1) {
+          this.os.isLinux = true;
+        }
       }
 
       getBrowser() {
-        var sBrowser, sUsrAg = navigator.userAgent;
+        let sUsrAg = navigator.userAgent;
 
         if (sUsrAg.indexOf("Chrome") > -1) {
-          sBrowser = "Google Chrome";
+          this.browser.isChrome = true;
         } else if (sUsrAg.indexOf("Safari") > -1) {
-          sBrowser = "Apple Safari";
+          this.browser.isSafari = true;
         } else if (sUsrAg.indexOf("Opera") > -1) {
-          sBrowser = "Opera";
+          this.browser.isOpera = true;
         } else if (sUsrAg.indexOf("Firefox") > -1) {
-          sBrowser = "Mozilla Firefox";
+          this.browser.isFirefox = true;
         } else if (sUsrAg.indexOf("MSIE") > -1 || sUsrAg.indexOf("Mozilla/5.0") > -1) {
-          sBrowser = "Microsoft Internet Explorer";
+          this.browser.isIE = true;
         }
-        return sBrowser;
-      }
-
-      isFirefox() {
-        return this.getBrowser() === 'Mozilla Firefox';
-      }
-
-      isChrome() {
-        return this.getBrowser() === 'Google Chrome';
-      }
-
-      isIE() {
-        return this.getBrowser() === 'Microsoft Internet Explorer';
       }
 
       handleBlur(e) {
@@ -179,57 +162,56 @@
       }
 
       makeEditable() {
-        console.log('makeeditable');
         this.showTextarea(true);
         this.clearSVG();
       }
 
       resizeTextarea() {
         this.$.textarea.style.height = "";
-        this.$.textarea.style.height = Math.min(this.$.textarea.scrollHeight, this.maxHeight) + "px";
+        let h = Math.min(this.$.textarea.scrollHeight, this.maxHeight);
+        this.$.textarea.style.height = h + "px";
+        this.$.svgcontent.setAttribute('height', h);
       }
 
       parseText() {
-        this.lineY = 0;
-
-        // handle IE bug where <p> tags are added instead of <br>
-        // if (this.isIE()) {
-        //   let $newcontent = this.$.textarea.innerHTML.replace(/<p[^>]*?>/g, "");
-        //   $newcontent = $newcontent.replace(/<\/p>/g, "<br>");
-        //   this.$.textarea.innerHTML = $newcontent;
-        // }
-        // ======================================================
-
+        // this.lineY = 0;
         this.showTextarea(false);
-
         this.clearSVG();
 
-        // Calculate the baseline for first tspan
-        if (this.isFirefox()) {
+        // Calculate the baseline for first text
+        if (this.browser.isFirefox) {
+          if (this.os.isMac) {
+            this.baseline = this.fontSize - 1;
+          } else {
+            this.baseline = this.fontSize;
+          }
+        } else if (this.browser.isIE) {
           this.baseline = this.fontSize;
         } else {
-          this.baseline = ((this.metrics.baseline) * this.metrics.fontSize);
+          this.baseline = Math.ceil((this.metrics.baseline) * this.metrics.fontSize);
         }
         /////////////////
 
         let formattedContent = this.ApplyLineBreaks();
-        console.log(formattedContent);
-
         let textLines = formattedContent.split('\n');
 
         // The line-height is inconsistent in firefox and possibly other browsers (except Chrome). The line-height
         // changes depending on the # of lines in the textarea. Therefore, it can't be assumed as (this.fontSize * this.lineHeight)
-        // all the time. Hence calculating based on the number of lines in the textarea.        
-        // this.computedLineHeight = this.computedLineHeight || (this.fontSize * this.lineHeight);
-        this.computedLineHeight = (parseInt(this.$.textarea.style.height) || 0) / textLines.length;
-        console.log('computedLineHeight', this.computedLineHeight);
+        // all the time. Hence normalize line-height by taking average of (this.fontSize * this.lineHeight) & computed value based on the number of lines in the textarea.                
+        let lineHeightBasedOnNumLines = (parseInt(this.$.textarea.style.height) || 0) / textLines.length;
+        this.computedLineHeight = (this.lineHeightBasedOnFontsize + lineHeightBasedOnNumLines) / 2;
 
-        if (this.isChrome()) {
-          // this.computedLineHeight = Math.floor(this.computedLineHeight);
-        } else if (this.isFirefox()) {
+        console.log('before patches: computedLineHeight', this.computedLineHeight);
+        // handle OS and Browser specific issues
+        if (this.os.isMac && (this.browser.isChrome || this.browser.isSafari)) {
+          this.computedLineHeight = Math.floor(this.computedLineHeight);
+        } else if (this.browser.isFirefox) {
+          // this.computedLineHeight = Math.round(this.computedLineHeight);
+        } else if (this.browser.isIE) {
           // this.computedLineHeight = Math.round(this.computedLineHeight);
         }
         ///////////////
+        console.log('computedLineHeight', this.computedLineHeight);
 
         let counter = 0;
         textLines.map(key => {
@@ -238,26 +220,30 @@
         });
       }
 
+
       addText(node, isFirst) {
         // get text value from the input
         var myText = node;
+
+        // preserve empty lines. Without extra space, SVG ignores the tspan and won't render it
+        if (myText === '')
+          myText = ' ';
+
         // create a new tspan node to add to the SVG text block
-        // var newText = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-        // newText.appendChild(document.createTextNode(myText));
-        // this.$.svgtext.appendChild(newText);
-        var newText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        var newText = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
         newText.appendChild(document.createTextNode(myText));
-        this.$.svgcontent.appendChild(newText);
-
-
-
-        this.lineY += (isFirst) ? this.baseline : this.computedLineHeight;
-
+        this.$.svgtext.appendChild(newText);
         newText.setAttributeNS(null, "x", "0");
-        // newText.setAttributeNS(null, "dy", (isFirst) ? this.baseline : this.computedLineHeight);
+        newText.setAttributeNS(null, "dy", (isFirst) ? this.baseline : this.computedLineHeight);
 
-        newText.setAttributeNS(null, "y", this.lineY);
-        // newText.setAttributeNS(null, "text-anchor", "start");
+
+        // var newText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        // newText.appendChild(document.createTextNode(myText));
+        // this.$.svgcontent.appendChild(newText);
+        // this.lineY += (isFirst) ? this.baseline : this.computedLineHeight;       
+        // newText.setAttributeNS(null, "x", "0");
+        // newText.setAttributeNS(null, "style", "white-space:pre");
+        // newText.setAttributeNS(null, "y", this.lineY);
 
 
         // add the text node to the SVG element
@@ -269,34 +255,20 @@
 
       showTextarea(flag) {
         this.$.textarea.style.opacity = flag ? 1 : 0;
-        console.log('this.$.textarea.style.opacity', this.$.textarea.style.opacity);
       }
 
       clearSVG() {
-        while (this.$.svgcontent.lastChild) {
-          this.$.svgcontent.removeChild(this.$.svgcontent.lastChild);
+        while (this.$.svgtext.lastChild) {
+          this.$.svgtext.removeChild(this.$.svgtext.lastChild);
         }
       }
 
       ApplyLineBreaks() {
         var oTextarea = this.$.textarea;
-        // if (oTextarea.wrap) {
         oTextarea.setAttribute("wrap", "off");
-        // }
-        // else {
-        // oTextarea.setAttribute("wrap", "off");
-        // var newArea = oTextarea.cloneNode(true);
-        // newArea.value = oTextarea.value;
-        // oTextarea.parentNode.replaceChild(newArea, oTextarea);
-        // oTextarea = newArea;
-        // }
-
         var strRawValue = oTextarea.value;
         oTextarea.value = "";
         var nEmptyWidth = oTextarea.scrollWidth;
-
-        // oTextarea.style.whiteSpace = "pre";
-        // oTextarea.setAttribute("wrap", "off");
 
         var nLastWrappingIndex = -1;
 
@@ -351,11 +323,8 @@
           strNewValue += strRawValue.substr(i, nLineLength) + "\n";
           i += nLineLength;
         }
-        // oTextarea.style.whiteSpace = "pre-wrap";
-        // return strNewValue;//.replace(new RegExp("\\n", "g"), "<br>");
         oTextarea.value = strNewValue;
         oTextarea.setAttribute("wrap", "");
-        // document.getElementById("pnlPreview").innerHTML = oTextarea.value.replace(new RegExp("\\n", "g"), "<br />");
         return strNewValue;
       }
     }

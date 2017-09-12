@@ -12,31 +12,22 @@
   <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
   <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
   <link rel="import" href="../svg-textarea.html">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700">
 
   <custom-style>
     <style is="custom-style" include="demo-pages-shared-styles">
-
+      body {
+        font-family: 'Open Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
     </style>
   </custom-style>
 </head>
 
 <body>
-  <!-- <div class="vertical-section-container centered">
-      <h3>Basic svg-textarea demo</h3>
-      <demo-snippet>
-        <template>
-        </template>
-      </demo-snippet>
-    </div> -->
-  <svg-textarea></svg-textarea>
-
-  <!-- <svg style="outline: 1px solid red;">
-    <text id="txt" x="0" dy="20">test</text>
-    <text id="txt2" x="0" dy="20">2nd text</text>
-    <text x="0" dy="20">
-      <tspan id="tspan">tspan text</tspan>
-    </text>
-  </svg> -->
+  <div>
+    <svg-textarea></svg-textarea>
+  </div>
 </body>
 
 </html>
