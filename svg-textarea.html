@@ -1,6 +1,5 @@
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="fontmetrics.html">
-<link rel="import" href="font.js.html">
 
 <dom-module id="svg-textarea">
   <template>
@@ -84,10 +83,10 @@
             value: 0
           },
           os: {
-            value: { isMac: false, isWin: false, isUnix: false, isLinux: false }
+            value: { mac: false, win: false, unix: false, linux: false }
           },
           browser: {
-            value: { isIE: false, isChrome: false, isFirefox: false, isSafari: false, isOpera: false }
+            value: { ie: false, chrome: false, firefox: false, safari: false, opera: false }
           }
         };
       }
@@ -131,13 +130,13 @@
       getOS() {
         let sAppVer = navigator.appVersion;
         if (sAppVer.indexOf("Win") != -1) {
-          this.os.isWin = true;
+          this.os.win = true;
         } else if (sAppVer.indexOf("Mac") != -1) {
-          this.os.isMac = true;
+          this.os.mac = true;
         } else if (sAppVer.indexOf("X11") != -1) {
-          this.os.isUnix = true;
+          this.os.unix = true;
         } else if (sAppVer.indexOf("Linux") != -1) {
-          this.os.isLinux = true;
+          this.os.linux = true;
         }
       }
 
@@ -145,15 +144,15 @@
         let sUsrAg = navigator.userAgent;
 
         if (sUsrAg.indexOf("Chrome") > -1) {
-          this.browser.isChrome = true;
+          this.browser.chrome = true;
         } else if (sUsrAg.indexOf("Safari") > -1) {
-          this.browser.isSafari = true;
+          this.browser.safari = true;
         } else if (sUsrAg.indexOf("Opera") > -1) {
-          this.browser.isOpera = true;
+          this.browser.opera = true;
         } else if (sUsrAg.indexOf("Firefox") > -1) {
-          this.browser.isFirefox = true;
+          this.browser.firefox = true;
         } else if (sUsrAg.indexOf("MSIE") > -1 || sUsrAg.indexOf("Mozilla/5.0") > -1) {
-          this.browser.isIE = true;
+          this.browser.ie = true;
         }
       }
 
@@ -179,13 +178,13 @@
         this.clearSVG();
 
         // Calculate the baseline for first text
-        if (this.browser.isFirefox) {
-          if (this.os.isMac) {
+        if (this.browser.firefox) {
+          if (this.os.mac) {
             this.baseline = this.fontSize - 1;
           } else {
             this.baseline = this.fontSize;
           }
-        } else if (this.browser.isIE) {
+        } else if (this.browser.ie) {
           this.baseline = this.fontSize;
         } else {
           this.baseline = Math.ceil((this.metrics.baseline) * this.metrics.fontSize);
@@ -203,11 +202,11 @@
 
         console.log('before patches: computedLineHeight', this.computedLineHeight);
         // handle OS and Browser specific issues
-        if (this.os.isMac && (this.browser.isChrome || this.browser.isSafari)) {
+        if (this.os.mac && (this.browser.chrome || this.browser.safari)) {
           this.computedLineHeight = Math.floor(this.computedLineHeight);
-        } else if (this.browser.isFirefox) {
+        } else if (this.browser.firefox) {
           // this.computedLineHeight = Math.round(this.computedLineHeight);
-        } else if (this.browser.isIE) {
+        } else if (this.browser.ie) {
           // this.computedLineHeight = Math.round(this.computedLineHeight);
         }
         ///////////////
