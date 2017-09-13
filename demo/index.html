@@ -20,14 +20,22 @@
         font-family: 'Open Sans', sans-serif;
         -webkit-font-smoothing: antialiased;
       }
+
+      #svgcontent {
+        overflow: visible;
+        padding: 0px;
+        font-size: 24px;
+      }
     </style>
   </custom-style>
 </head>
 
 <body>
-  <div>
-    <svg-textarea></svg-textarea>
-  </div>
+  <svg id="svgcontent" width="100%" style="border: 1px solid red">
+    <text id="svgtext" x="0" y="0"></text>
+  </svg>
+
+  <svg-textarea svg-text-id="svgtext"></svg-textarea>
 </body>
 
 </html>

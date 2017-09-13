@@ -6,7 +6,7 @@
     <style>
        :host {
         display: block;
-        position: relative;
+        /* position: relative; */
         font-size: var(--svg-textarea-font-size, inherit);
         height: var(--svg-textarea-height);
       }
@@ -25,22 +25,8 @@
         line-height: 1.2;
         resize: none;
       }
-
-      #svgcontent {
-        overflow: visible;
-        padding: 0px;
-      }
-
-      #svgcontent tspan {
-        white-space: pre;
-      }
     </style>
-    <textarea rows="1" id="textarea" on-blur="handleBlur" on-click="makeEditable" on-input="resizeTextarea"></textarea>
-    <svg id="svgcontent" width="100%">
-      <text id="svgtext"></text>
-    </svg>
   </template>
-
 
   <script>
     /**
@@ -58,35 +44,55 @@
           svg: {
             type: String
           },
+          // ID of the svg <text> element which needs to be made editable
+          svgTextId: {
+            value: null
+          },
           maxHeight: {
             value: 1000
           },
           lineHeight: {
             value: 1.2 // set initial vertical position
           },
-          fontSize: {
-            value: 14
-          },
-          baseline: {
-            value: 0
+          adjustBaseline: {
+            value: false
           },
           metrics: {
             value: {}
           },
-          computedLineHeight: {
+          content: {
+            value: ''
+          },
+          _baseline: {
             value: 0
           },
-          // lineY: {
-          //   value: 0
-          // },
-          lineHeightBasedOnFontsize: {
+          _computedLineHeight: {
             value: 0
           },
-          os: {
+          _lineHeightBasedOnFontsize: {
+            value: 0
+          },
+          _os: {
             value: { mac: false, win: false, unix: false, linux: false }
           },
-          browser: {
+          _browser: {
             value: { ie: false, chrome: false, firefox: false, safari: false, opera: false }
+          },
+          _viewbox: {
+            value: null
+          },
+          // spacer string to fill in the <text> initially so that user can hover on the element
+          _spacer: {
+            value: '     '
+          },
+          _textareaOffset: {
+            value: 0
+          },
+          _textarea: {
+            value: null
+          },
+          _textareaProperties: {
+            value: { height: 'auto', fontFamily: 'sans-serif', fontSize: 'inherit', lineHeight: this.lineHeight }
           }
         };
       }
@@ -97,46 +103,50 @@
         this.getOS();
         this.getBrowser();
 
-        // set dynamic styles from the properties        
-        // this.updateStyles({ '--svg-textarea-height': this.$.textarea.scrollHeight + 'px' });
-        this.$.textarea.style.lineHeight = this.lineHeight;
-        if (this.fontSize > 0) {
-          this.updateStyles({ '--svg-textarea-font-size': this.fontSize + 'px' });
+        // last.. prepare the viewbox based on the svgTextID reference
+        this._viewbox = document.querySelector('#' + this.svgTextId);
+        if (this._viewbox == null) {
+          throw "Invalid Reference: `svgTextId` must refer to a valid SVG Text element";
         } else {
-          // get the inherited textarea font-size
-          if (window.ShadyCSS) {
-            this.fontSize = parseInt(ShadyCSS.getComputedStyleValue(this.$.textarea, 'font-size'));
-          } else {
-            this.fontSize = parseInt(getComputedStyle(this.$.textarea).getPropertyValue('font-size'));
+          if (this.adjustBaseline) {
+            this._viewbox.setAttributeNS(null, 'y', this._baseline);
           }
-        }
-        this.resizeTextarea();
-        this.lineHeightBasedOnFontsize = this.lineHeightBasedOnFontsize || this.fontSize * this.lineHeight;
+          this.addText(this._spacer);
+          this._viewbox.addEventListener('click', this.makeEditable.bind(this));
 
-        // calculate fontmetrics based on computed fontsize
-        console.time('FontMetrics');
-        this.metrics = FontMetrics({
-          fontFamily: 'Roboto',
-          // Optional (defaults)
-          fontWeight: 'normal',
-          fontSize: this.fontSize,
-          origin: 'top'
-        })
-        console.timeEnd('FontMetrics');
-        console.log('metrics', this.metrics);
-        ///////////////////////////////
+          let viewboxStyles = getComputedStyle(this._viewbox);
+          this._textareaProperties.fontFamily = viewboxStyles.fontFamily;
+          this._textareaProperties.fontSize = viewboxStyles.fontSize;
+        }
+
+        // calculate line-height from font-size
+        this._lineHeightBasedOnFontsize = this._lineHeightBasedOnFontsize || (parseInt(this._textareaProperties.fontSize) || 0) * this.lineHeight;
+
+        // get the baseline
+        if (this.adjustBaseline) {
+          // calculate fontmetrics based on computed fontsize
+          this.metrics = FontMetrics({
+            fontFamily: 'Roboto',
+            // Optional (defaults)
+            fontWeight: 'normal',
+            fontSize: this._textareaProperties.fontSize,
+            origin: 'top'
+          })
+          this.calculateBaseline(this.metrics);
+        }
+
       }
 
       getOS() {
         let sAppVer = navigator.appVersion;
         if (sAppVer.indexOf("Win") != -1) {
-          this.os.win = true;
+          this._os.win = true;
         } else if (sAppVer.indexOf("Mac") != -1) {
-          this.os.mac = true;
+          this._os.mac = true;
         } else if (sAppVer.indexOf("X11") != -1) {
-          this.os.unix = true;
+          this._os.unix = true;
         } else if (sAppVer.indexOf("Linux") != -1) {
-          this.os.linux = true;
+          this._os.linux = true;
         }
       }
 
@@ -144,15 +154,15 @@
         let sUsrAg = navigator.userAgent;
 
         if (sUsrAg.indexOf("Chrome") > -1) {
-          this.browser.chrome = true;
+          this._browser.chrome = true;
         } else if (sUsrAg.indexOf("Safari") > -1) {
-          this.browser.safari = true;
+          this._browser.safari = true;
         } else if (sUsrAg.indexOf("Opera") > -1) {
-          this.browser.opera = true;
+          this._browser.opera = true;
         } else if (sUsrAg.indexOf("Firefox") > -1) {
-          this.browser.firefox = true;
+          this._browser.firefox = true;
         } else if (sUsrAg.indexOf("MSIE") > -1 || sUsrAg.indexOf("Mozilla/5.0") > -1) {
-          this.browser.ie = true;
+          this._browser.ie = true;
         }
       }
 
@@ -161,85 +171,82 @@
       }
 
       makeEditable() {
-        this.showTextarea(true);
+        let range = this.getSelectionRange();
+        let pos = this.getOffset(this._viewbox);
+        this.showTextarea(true, pos, range);
         this.clearSVG();
       }
 
       resizeTextarea() {
-        this.$.textarea.style.height = "";
-        let h = Math.min(this.$.textarea.scrollHeight, this.maxHeight);
-        this.$.textarea.style.height = h + "px";
-        this.$.svgcontent.setAttribute('height', h);
+        this._textarea.style.height = "";
+        let h = Math.min(this._textarea.scrollHeight, this.maxHeight) + 'px';
+        this._textarea.style.height = this._textareaProperties.height = h;
       }
 
       parseText() {
-        // this.lineY = 0;
-        this.showTextarea(false);
-        this.clearSVG();
 
-        // Calculate the baseline for first text
-        if (this.browser.firefox) {
-          if (this.os.mac) {
-            this.baseline = this.fontSize - 1;
-          } else {
-            this.baseline = this.fontSize;
-          }
-        } else if (this.browser.ie) {
-          this.baseline = this.fontSize;
-        } else {
-          this.baseline = Math.ceil((this.metrics.baseline) * this.metrics.fontSize);
+        this.content = this._textarea.value;
+
+        // this.showTextarea(false);
+
+        // if textarea is empty, set spacer text and exit
+        if (this.content.trim() === '') {
+          this.content = '';
+          this.addText(this._spacer);
+          return;
         }
-        /////////////////
 
         let formattedContent = this.ApplyLineBreaks();
         let textLines = formattedContent.split('\n');
 
         // The line-height is inconsistent in firefox and possibly other browsers (except Chrome). The line-height
-        // changes depending on the # of lines in the textarea. Therefore, it can't be assumed as (this.fontSize * this.lineHeight)
-        // all the time. Hence normalize line-height by taking average of (this.fontSize * this.lineHeight) & computed value based on the number of lines in the textarea.                
-        let lineHeightBasedOnNumLines = (parseInt(this.$.textarea.style.height) || 0) / textLines.length;
-        this.computedLineHeight = (this.lineHeightBasedOnFontsize + lineHeightBasedOnNumLines) / 2;
+        // changes depending on the # of lines in the textarea. Therefore, it can't be assumed as (this._textareaProperties.fontSize * this.lineHeight)
+        // all the time. Hence normalize line-height by taking average of (this._textareaProperties.fontSize * this.lineHeight) & computed value based on the number of lines in the textarea.                
+        let lineHeightBasedOnNumLines = (parseInt(this._textarea.style.height) || 0) / textLines.length;
+        this._computedLineHeight = (this._lineHeightBasedOnFontsize + lineHeightBasedOnNumLines) / 2;
 
-        console.log('before patches: computedLineHeight', this.computedLineHeight);
         // handle OS and Browser specific issues
-        if (this.os.mac && (this.browser.chrome || this.browser.safari)) {
-          this.computedLineHeight = Math.floor(this.computedLineHeight);
-        } else if (this.browser.firefox) {
-          // this.computedLineHeight = Math.round(this.computedLineHeight);
-        } else if (this.browser.ie) {
-          // this.computedLineHeight = Math.round(this.computedLineHeight);
+        if (this._os.mac && (this._browser.chrome || this._browser.safari)) {
+          this._computedLineHeight = Math.floor(this._computedLineHeight);
         }
         ///////////////
-        console.log('computedLineHeight', this.computedLineHeight);
 
         let counter = 0;
         textLines.map(key => {
           this.addText(key, counter === 0 ? true : false);
           counter++;
         });
+
+        // destroy the textarea
+        if (this._textarea) {
+          this.shadowRoot.removeChild(this._textarea);
+          this._textarea = null;
+        }
       }
 
 
-      addText(node, isFirst) {
+      addText(text) {
         // get text value from the input
-        var myText = node;
+        // var myText = text;
 
         // preserve empty lines. Without extra space, SVG ignores the tspan and won't render it
-        if (myText === '')
-          myText = ' ';
+        if (text === '')
+          text = ' ';
 
         // create a new tspan node to add to the SVG text block
         var newText = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-        newText.appendChild(document.createTextNode(myText));
-        this.$.svgtext.appendChild(newText);
+        newText.appendChild(document.createTextNode(text));
         newText.setAttributeNS(null, "x", "0");
-        newText.setAttributeNS(null, "dy", (isFirst) ? this.baseline : this.computedLineHeight);
+        newText.setAttributeNS(null, 'style', 'white-space: pre');
+        // newText.setAttributeNS(null, "dy", (isFirst) ? this._baseline : this._computedLineHeight);
+        newText.setAttributeNS(null, "dy", (this._viewbox.children.length == 0) ? 0 : this._computedLineHeight);
+        this._viewbox.appendChild(newText);
 
 
         // var newText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        // newText.appendChild(document.createTextNode(myText));
+        // newText.appendChild(document.createTextNode(text));
         // this.$.svgcontent.appendChild(newText);
-        // this.lineY += (isFirst) ? this.baseline : this.computedLineHeight;       
+        // this.lineY += (isFirst) ? this._baseline : this._computedLineHeight;       
         // newText.setAttributeNS(null, "x", "0");
         // newText.setAttributeNS(null, "style", "white-space:pre");
         // newText.setAttributeNS(null, "y", this.lineY);
@@ -252,18 +259,47 @@
         // document.getElementById('blabla').focus();
       }
 
-      showTextarea(flag) {
-        this.$.textarea.style.opacity = flag ? 1 : 0;
+      showTextarea(flag, position, range) {
+
+        if (flag) {
+
+          let ta = this.getTextarea();
+
+          // set approximate offset initially. This will be updated once textarea is rendered and actual value can be retrieved
+          this._textareaOffset = this._textareaOffset || this._lineHeightBasedOnFontsize * 0.1;
+
+          let styles = { top: (position.top + this._textareaOffset) + 'px', left: position.left + 'px', display: 'block' };
+          Object.assign(ta.style, styles);
+
+          this.shadowRoot.appendChild(ta);
+
+          // calculate offset for the textarea's top so that it aligns with the svg text element.
+          // this._textareaOffset = this._textareaOffset || ta.scrollHeight - this._viewbox.getBoundingClientRect().height;
+
+
+          // set focus and cursor position
+          ta.focus();
+          if (range) {
+            ta.setSelectionRange(range.startOffset, range.endOffset);
+          }
+        } else {
+          // if (this._textarea) {
+          //   this.shadowRoot.removeChild(this._textarea);
+          //   this._textarea = null;
+          // }
+          let styles = { top: -9999 + 'px', left: -9999 + 'px', display: 'none' };
+          Object.assign(this._textarea.style, styles);
+        }
       }
 
       clearSVG() {
-        while (this.$.svgtext.lastChild) {
-          this.$.svgtext.removeChild(this.$.svgtext.lastChild);
+        while (this._viewbox.lastChild) {
+          this._viewbox.removeChild(this._viewbox.lastChild);
         }
       }
 
       ApplyLineBreaks() {
-        var oTextarea = this.$.textarea;
+        var oTextarea = this._textarea;
         oTextarea.setAttribute("wrap", "off");
         var strRawValue = oTextarea.value;
         oTextarea.value = "";
@@ -325,6 +361,77 @@
         oTextarea.value = strNewValue;
         oTextarea.setAttribute("wrap", "");
         return strNewValue;
+      }
+
+
+      // Calculate the baseline for first text element
+      calculateBaseline(metrics) {
+        if (this._browser.firefox) {
+          if (this._os.mac) {
+            this._baseline = this._textareaProperties.fontSize - 1;
+          } else {
+            this._baseline = this._textareaProperties.fontSize;
+          }
+        } else if (this._browser.ie) {
+          this._baseline = this._textareaProperties.fontSize;
+        } else {
+          this._baseline = Math.ceil((metrics.baseline) * metrics.fontSize);
+        }
+      }
+
+      // get user selected text position
+      getSelectionRange() {
+        if (!this.content) {
+          return null;
+        }
+
+        // get selection range from svg on which user actually clicked
+        let selObj = window.getSelection();
+        let range = selObj.getRangeAt(0);
+
+        // identify offsets on the textarea content based on above data
+        let o = { startOffset: 0, endOffset: 0 };
+        let charCount = 0;
+        let nodes = this._viewbox.childNodes;
+        for (var i = 0; i < nodes.length; i++) {
+          var element = nodes[i];
+          let textNode = element.firstChild;
+          if (textNode === range.startContainer) {
+            o.startOffset = charCount + range.startOffset;
+          }
+          if (textNode === range.endContainer) {
+            o.endOffset = charCount + range.endOffset;
+          }
+          charCount += textNode.nodeValue.length;
+          // add extra index for new lines
+          if (this.content.charAt(charCount) === '\n') {
+            charCount++;
+          }
+        }
+        return o;
+      }
+
+      // get position of the element
+      getOffset(el) {
+        el = el.getBoundingClientRect();
+        return {
+          left: el.left + window.scrollX,
+          top: el.top + window.scrollY
+        }
+      }
+
+      getTextarea() {
+        if (!this._textarea) {
+          this._textarea = document.createElement("textarea");
+          this._textarea.rows = '1';
+          this._textarea.id = 'textarea';
+          Object.assign(this._textarea.style, this._textareaProperties);
+
+          this._textarea.value = this.content || '';
+          this._textarea.addEventListener('blur', () => this.handleBlur());
+          this._textarea.addEventListener('input', () => this.resizeTextarea());
+        }
+        return this._textarea;
       }
     }
 
