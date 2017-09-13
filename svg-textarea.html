@@ -6,7 +6,6 @@
     <style>
        :host {
         display: block;
-        /* position: relative; */
         font-size: var(--svg-textarea-font-size, inherit);
         height: var(--svg-textarea-height);
       }
@@ -31,7 +30,7 @@
   <script>
     /**
     * `svg-textarea`
-    * SVG textarea element that supports multi-line edit
+    * SVG text element with support for multi-line edit
     *
     * @customElement
     * @polymer
@@ -108,9 +107,6 @@
         if (this._viewbox == null) {
           throw "Invalid Reference: `svgTextId` must refer to a valid SVG Text element";
         } else {
-          if (this.adjustBaseline) {
-            this._viewbox.setAttributeNS(null, 'y', this._baseline);
-          }
           this.addText(this._spacer);
           this._viewbox.addEventListener('click', this.makeEditable.bind(this));
 
@@ -129,10 +125,13 @@
             fontFamily: 'Roboto',
             // Optional (defaults)
             fontWeight: 'normal',
-            fontSize: this._textareaProperties.fontSize,
+            fontSize: (parseInt(this._textareaProperties.fontSize) || 0),
             origin: 'top'
           })
           this.calculateBaseline(this.metrics);
+
+          // set the baseline on the svg text element
+          this._viewbox.setAttributeNS(null, 'y', this._baseline);
         }
 
       }
@@ -184,10 +183,7 @@
       }
 
       parseText() {
-
         this.content = this._textarea.value;
-
-        // this.showTextarea(false);
 
         // if textarea is empty, set spacer text and exit
         if (this.content.trim() === '') {
@@ -224,11 +220,7 @@
         }
       }
 
-
       addText(text) {
-        // get text value from the input
-        // var myText = text;
-
         // preserve empty lines. Without extra space, SVG ignores the tspan and won't render it
         if (text === '')
           text = ' ';
@@ -238,55 +230,21 @@
         newText.appendChild(document.createTextNode(text));
         newText.setAttributeNS(null, "x", "0");
         newText.setAttributeNS(null, 'style', 'white-space: pre');
-        // newText.setAttributeNS(null, "dy", (isFirst) ? this._baseline : this._computedLineHeight);
         newText.setAttributeNS(null, "dy", (this._viewbox.children.length == 0) ? 0 : this._computedLineHeight);
         this._viewbox.appendChild(newText);
-
-
-        // var newText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        // newText.appendChild(document.createTextNode(text));
-        // this.$.svgcontent.appendChild(newText);
-        // this.lineY += (isFirst) ? this._baseline : this._computedLineHeight;       
-        // newText.setAttributeNS(null, "x", "0");
-        // newText.setAttributeNS(null, "style", "white-space:pre");
-        // newText.setAttributeNS(null, "y", this.lineY);
-
-
-        // add the text node to the SVG element
-        // debugger;
-        // empty the form fieldset & give it focus
-        // document.getElementById('blabla').value = '';
-        // document.getElementById('blabla').focus();
       }
 
       showTextarea(flag, position, range) {
-
         if (flag) {
-
           let ta = this.getTextarea();
-
-          // set approximate offset initially. This will be updated once textarea is rendered and actual value can be retrieved
-          this._textareaOffset = this._textareaOffset || this._lineHeightBasedOnFontsize * 0.1;
-
-          let styles = { top: (position.top + this._textareaOffset) + 'px', left: position.left + 'px', display: 'block' };
-          Object.assign(ta.style, styles);
-
+          this.positionTextarea(ta, position);
           this.shadowRoot.appendChild(ta);
-
-          // calculate offset for the textarea's top so that it aligns with the svg text element.
-          // this._textareaOffset = this._textareaOffset || ta.scrollHeight - this._viewbox.getBoundingClientRect().height;
-
-
           // set focus and cursor position
           ta.focus();
           if (range) {
             ta.setSelectionRange(range.startOffset, range.endOffset);
           }
         } else {
-          // if (this._textarea) {
-          //   this.shadowRoot.removeChild(this._textarea);
-          //   this._textarea = null;
-          // }
           let styles = { top: -9999 + 'px', left: -9999 + 'px', display: 'none' };
           Object.assign(this._textarea.style, styles);
         }
@@ -432,6 +390,16 @@
           this._textarea.addEventListener('input', () => this.resizeTextarea());
         }
         return this._textarea;
+      }
+
+      positionTextarea(ta, position) {
+        // set approximate offset initially. This will be updated once textarea is rendered and actual value can be retrieved
+        //round it off to nearest 0.5 decimal
+        let offset = Math.round((this._lineHeightBasedOnFontsize * 0.08) * 2) / 2;
+        this._textareaOffset = this._textareaOffset || offset;
+
+        let styles = { top: (position.top + this._textareaOffset) + 'px', left: position.left + 'px', display: 'block' };
+        Object.assign(ta.style, styles);
       }
     }
 
