@@ -41,25 +41,28 @@
       static get properties() {
         return {
           svg: {
-            type: String
+            type: String,
           },
           // ID of the svg <text> element which needs to be made editable
-          svgTextId: {
-            value: null
-          },
+          svgTextId: String,
           maxHeight: {
+            type: Number,
             value: 1000
           },
           lineHeight: {
+            type: Number,
             value: 1.2 // set initial vertical position
           },
           adjustBaseline: {
+            type: Boolean,
             value: false
           },
           metrics: {
+            type: Object,
             value: {}
           },
           content: {
+            type: String,
             value: ''
           },
           topOffset: {
@@ -84,7 +87,9 @@
             value: { ie: false, chrome: false, firefox: false, safari: false, opera: false }
           },
           _viewbox: {
-            value: null
+            value: function () {
+              return null;
+            }
           },
           // spacer string to fill in the <text> initially so that user can hover on the element
           _spacer: {
@@ -94,10 +99,14 @@
             value: 0
           },
           _textarea: {
-            value: null
+            value: function () {
+              return null;
+            }
           },
           _textareaProperties: {
-            value: { height: 'auto', fontFamily: 'sans-serif', fontSize: 'inherit', lineHeight: this.lineHeight }
+            value: function () {
+              return { height: 'auto', fontFamily: 'sans-serif', fontSize: 'inherit', lineHeight: this.lineHeight }
+            }
           }
         };
       }
@@ -176,12 +185,12 @@
 
       makeEditable() {
         let range = this.getSelectionRange();
-        let pos = this.getOffset(this._viewbox);
-        this.showTextarea(true, pos, range);
+        this.showTextarea(true, range);
         this.clearSVG();
       }
 
       resizeTextarea() {
+        console.log('resizeTextarea', this._textarea);
         this._textarea.style.height = "";
         let h = Math.min(this._textarea.scrollHeight, this.maxHeight) + 'px';
         this._textarea.style.height = this._textareaProperties.height = h;
@@ -240,10 +249,10 @@
         this._viewbox.appendChild(newText);
       }
 
-      showTextarea(flag, position, range) {
+      showTextarea(flag, range) {
         if (flag) {
           let ta = this.getTextarea();
-          this.positionTextarea(ta, position);
+          this.positionTextarea(ta);
           this.shadowRoot.appendChild(ta);
           // set focus and cursor position
           ta.focus();
@@ -399,7 +408,8 @@
         return this._textarea;
       }
 
-      positionTextarea(ta, position) {
+      positionTextarea(ta) {
+        let position = this.getOffset(this._viewbox);
         // set approximate offset initially. This will be updated once textarea is rendered and actual value can be retrieved
         //round it off to nearest 0.5 decimal
         let offset = Math.round((this._lineHeightBasedOnFontsize * 0.08) * 2) / 2;
