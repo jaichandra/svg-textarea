@@ -236,13 +236,7 @@
         newText.setAttributeNS(null, "x", "0");
         newText.setAttributeNS(null, 'style', 'white-space: pre');
 
-        let children = this._viewbox.children;
-        //IE fix: in IE this._viewbox.children is null/undefined instead of empty array.
-        if (!children) {
-          children = [];
-        }
-
-        newText.setAttributeNS(null, "dy", (children.length == 0) ? 0 : this._computedLineHeight);
+        newText.setAttributeNS(null, "dy", (this._viewbox.childNodes.length == 0) ? 0 : this._computedLineHeight);
         this._viewbox.appendChild(newText);
       }
 
@@ -386,8 +380,8 @@
       getOffset(el) {
         el = el.getBoundingClientRect();
         return {
-          left: el.left + window.scrollX,
-          top: el.top + window.scrollY
+          left: el.left + window.pageXOffset,
+          top: el.top + window.pageYOffset
         }
       }
 
@@ -415,8 +409,6 @@
         position = this.applyUserAdjustments(position);
 
         let styles = { top: position.top + 'px', left: position.left + 'px', display: 'block' };
-
-
         Object.assign(ta.style, styles);
       }
 

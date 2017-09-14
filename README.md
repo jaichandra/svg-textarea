@@ -22,6 +22,10 @@ Add `<svg-textarea>` element as a sibling to the `svg` container. Pass the ID of
 * `top-offset`: The component is adjusted to `Open Sans` Google font and works pretty well for font sizes between 10-50px. However depending on your `font-family` and `font-size`, you might notice some shift in text when edit mode is enabled. Use `top-offset` to adjust the top position. You can pass `+ve` or `-ve` values. These values are relative to the current position of textarea.
 * `left-offset`: Use `left-offset` to adjust the left position. You can pass `+ve` or `-ve` values. These values are relative to the current position of textarea.
 
+## Browser compatibility
+
+Latest versions of Chrome, Safari, Firefox and IE11+
+
 ## Install the Polymer-CLI
 
 First, make sure you have the [Polymer CLI](https://www.npmjs.com/package/polymer-cli) installed. Then run `polymer serve` to serve your element locally.
