@@ -1,6 +1,6 @@
 # \<svg-textarea\>
 
-SVG textarea element with support for multi-line editing.
+A Polymer 2 element for converting an SVG <text> element to a an editable multi-line textarea
 
 ## Usage
 
