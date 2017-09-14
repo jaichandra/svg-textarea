@@ -62,6 +62,12 @@
           content: {
             value: ''
           },
+          topOffset: {
+            value: 0
+          },
+          leftOffset: {
+            value: 0
+          },
           _baseline: {
             value: 0
           },
@@ -151,7 +157,6 @@
 
       getBrowser() {
         let sUsrAg = navigator.userAgent;
-
         if (sUsrAg.indexOf("Chrome") > -1) {
           this._browser.chrome = true;
         } else if (sUsrAg.indexOf("Safari") > -1) {
@@ -230,7 +235,14 @@
         newText.appendChild(document.createTextNode(text));
         newText.setAttributeNS(null, "x", "0");
         newText.setAttributeNS(null, 'style', 'white-space: pre');
-        newText.setAttributeNS(null, "dy", (this._viewbox.children.length == 0) ? 0 : this._computedLineHeight);
+
+        let children = this._viewbox.children;
+        //IE fix: in IE this._viewbox.children is null/undefined instead of empty array.
+        if (!children) {
+          children = [];
+        }
+
+        newText.setAttributeNS(null, "dy", (children.length == 0) ? 0 : this._computedLineHeight);
         this._viewbox.appendChild(newText);
       }
 
@@ -324,14 +336,15 @@
 
       // Calculate the baseline for first text element
       calculateBaseline(metrics) {
+        let size = (parseInt(this._textareaProperties.fontSize) || 0);
         if (this._browser.firefox) {
           if (this._os.mac) {
-            this._baseline = this._textareaProperties.fontSize - 1;
+            this._baseline = size - 1;
           } else {
-            this._baseline = this._textareaProperties.fontSize;
+            this._baseline = size;
           }
         } else if (this._browser.ie) {
-          this._baseline = this._textareaProperties.fontSize;
+          this._baseline = size;
         } else {
           this._baseline = Math.ceil((metrics.baseline) * metrics.fontSize);
         }
@@ -397,9 +410,22 @@
         //round it off to nearest 0.5 decimal
         let offset = Math.round((this._lineHeightBasedOnFontsize * 0.08) * 2) / 2;
         this._textareaOffset = this._textareaOffset || offset;
+        position.top += this._textareaOffset;
+        // apply user adjustments
+        position = this.applyUserAdjustments(position);
 
-        let styles = { top: (position.top + this._textareaOffset) + 'px', left: position.left + 'px', display: 'block' };
+        let styles = { top: position.top + 'px', left: position.left + 'px', display: 'block' };
+
+
         Object.assign(ta.style, styles);
+      }
+
+      // if user specific offsets are set, add those in.
+      applyUserAdjustments(position) {
+        position.top += parseInt(this.topOffset) || 0;
+        position.left += parseInt(this.leftOffset) || 0;
+
+        return position;
       }
     }
 
