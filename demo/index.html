@@ -24,7 +24,7 @@
       .svgcontent {
         overflow: visible;
         padding: 0px;
-        font-size: 16px;
+        font-size: 10px;
       }
     </style>
   </custom-style>
@@ -32,7 +32,7 @@
 
 <body>
 
-  <svg class="svgcontent" width="100%" style="border: 1px solid red">
+  <svg class="svgcontent" style="border: 0px solid red">
     <text id="svgtext1"></text>
   </svg>
   <svg-textarea svg-text-id="svgtext1" adjust-baseline="true"></svg-textarea>
@@ -41,15 +41,26 @@
     <h3>svg-textarea Demo</h3>
     <demo-snippet>
       <template>
-        <svg class="svgcontent" width="100%" style="border: 1px solid red">
+        <svg-textarea svg-text-id="svgtext2" adjust-baseline="true"></svg-textarea>
+        <svg class="svgcontent" width="100%" style="border: 0px solid red">
           <text id="svgtext2"></text>
         </svg>
 
-        <svg-textarea svg-text-id="svgtext2" adjust-baseline="true"></svg-textarea>
       </template>
     </demo-snippet>
   </div>
+  <!-- <p></p>
+  <p></p>
+  <div>
+    <h3>testing</h3>
+    <div>
+      <svg-textarea svg-text-id="svgtext2" adjust-baseline="true"></svg-textarea>
+      <svg class="svgcontent" width="100%" style="border: 0px solid red">
+        <text id="svgtext2"></text>
+      </svg>
 
+    </div>
+  </div> -->
 </body>
 
 </html>
