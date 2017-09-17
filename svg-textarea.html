@@ -1,6 +1,6 @@
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="../polymer/lib/utils/render-status.html">
-<link rel="import" href="fontmetrics.html">
+<!-- <link rel="import" href="fontmetrics.html"> -->
 
 <dom-module id="svg-textarea">
   <template>
@@ -54,10 +54,6 @@
             type: Number,
             value: 1.2 // set initial vertical position
           },
-          adjustBaseline: {
-            type: Boolean,
-            value: false
-          },
           metrics: {
             type: Object,
             value: {}
@@ -70,9 +66,6 @@
             value: 0
           },
           leftOffset: {
-            value: 0
-          },
-          _baseline: {
             value: 0
           },
           _computedLineHeight: {
@@ -142,22 +135,6 @@
             default:
               break;
           }
-        }
-        ///////////////
-
-        // get the baseline
-        if (this.adjustBaseline) {
-          // calculate fontmetrics based on computed fontsize
-          this.metrics = FontMetrics({
-            fontFamily: viewboxStyles.fontFamily,
-            fontWeight: 'normal',
-            fontSize: (parseFloat(this._textareaProperties.fontSize) || 0),
-            origin: 'top'
-          })
-          // this.calculateBaseline(this.metrics);
-
-          // set the baseline on the svg text element
-          this._viewbox.setAttributeNS(null, 'y', this._baseline);
         }
 
         Polymer.RenderStatus.beforeNextRender(this, function () {
@@ -305,31 +282,6 @@
           this.test();
           this.shadowRoot.removeChild(this._textarea);
           this._textarea = null;
-        }
-      }
-
-      // Calculate the baseline for first text element
-      calculateBaseline(metrics) {
-        let size = (parseFloat(this._textareaProperties.fontSize) || 0);
-        switch (this._browser) {
-          case 'Chrome':
-            this._baseline = this.applyBrowserRounding(metrics.baseline * metrics.fontSize);
-            break;
-          case 'Firefox':
-            if (this._os.mac) {
-              this._baseline = size - 1;
-            } else {
-              this._baseline = size;
-            }
-            break;
-
-          case 'MSIE':
-            this._baseline = size;
-            break;
-
-          default:
-            this._baseline = this.applyBrowserRounding(metrics.baseline * metrics.fontSize);
-            break;
         }
       }
 
