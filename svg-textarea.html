@@ -234,9 +234,8 @@
             left: this._viewboxProperties.left, position: 'absolute'
           };
 
-          // apply browser rounding
+          // apply browser rounding for height values as different browsers handle it differently
           this._textareaPosition.top = this.applyBrowserRounding(this._textareaPosition.top);
-          this._textareaPosition.left = this.applyBrowserRounding(this._textareaPosition.left);
 
           // apply user adjustments
           this._textareaPosition = this.applyUserAdjustments(this._textareaPosition);
