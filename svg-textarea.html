@@ -130,6 +130,7 @@
         let viewboxStyles = getComputedStyle(this._viewbox);
         this._textareaProperties.fontFamily = viewboxStyles.fontFamily;
         this._textareaProperties.fontSize = viewboxStyles.fontSize;
+        //TODO: check line height on viewbox as well.
         this._lineHeightBasedOnFontsize = (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
 
         // get the baseline
@@ -227,8 +228,13 @@
       }
 
       positionTextarea() {
-        let initialStyles = { top: this._viewboxProperties.top, left: this._viewboxProperties.left, position: 'fixed' };
-        Object.assign(this._textarea.style, this._textareaProperties, this.convertToCSS(initialStyles));
+        let styles;
+        if (this._textareaPosition) {
+          styles = this._textareaPosition;
+        } else {
+          styles = { top: this._viewboxProperties.top, left: this._viewboxProperties.left, position: 'fixed' };
+        }
+        Object.assign(this._textarea.style, this._textareaProperties, this.convertToCSS(styles));
       }
 
       adjustTextareaPosition(ta) {
@@ -278,8 +284,9 @@
         // The line-height is inconsistent in firefox and possibly other browsers (except Chrome). The line-height
         // changes depending on the # of lines in the textarea. Therefore, it can't be assumed as (this._textareaProperties.fontSize * this.lineHeight)
         // all the time. Hence normalize line-height by taking average of (this._textareaProperties.fontSize * this.lineHeight) & computed value based on the number of lines in the textarea.                
-        let lineHeightBasedOnNumLines = (parseFloat(this._textarea.style.height) || 0) / textLines.length;
-        this._computedLineHeight = (this._lineHeightBasedOnFontsize + lineHeightBasedOnNumLines) / 2;
+        // let lineHeightBasedOnNumLines = (parseFloat(this._textarea.style.height) || 0) / textLines.length;
+        // this._computedLineHeight = (this._lineHeightBasedOnFontsize + lineHeightBasedOnNumLines) / 2;
+        this._computedLineHeight = this._lineHeightBasedOnFontsize;
 
         // handle OS and Browser specific issues
         if (this._os.mac) {
