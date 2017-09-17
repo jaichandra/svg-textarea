@@ -112,7 +112,7 @@
           },
           _textareaProperties: {
             value: function () {
-              return { height: 'auto', fontFamily: 'sans-serif', fontSize: 'inherit', lineHeight: this.lineHeight }
+              return { lineHeight: this.lineHeight }
             }
           }
         };
@@ -128,16 +128,28 @@
         this.addText(this._spacer);
 
         let viewboxStyles = getComputedStyle(this._viewbox);
-        this._textareaProperties.fontFamily = viewboxStyles.fontFamily;
         this._textareaProperties.fontSize = viewboxStyles.fontSize;
-        //TODO: check line height on viewbox as well.
-        this._lineHeightBasedOnFontsize = (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
+        this._computedLineHeight = (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
+
+        // handle OS and Browser specific issues for line-height
+        if (this._os.mac) {
+          switch (this._browser) {
+            case 'Chrome':
+            case 'Safari':
+              this._computedLineHeight = Math.floor(this._computedLineHeight);
+              break;
+
+            default:
+              break;
+          }
+        }
+        ///////////////
 
         // get the baseline
         if (this.adjustBaseline) {
           // calculate fontmetrics based on computed fontsize
           this.metrics = FontMetrics({
-            fontFamily: 'Roboto',
+            fontFamily: viewboxStyles.fontFamily,
             fontWeight: 'normal',
             fontSize: (parseFloat(this._textareaProperties.fontSize) || 0),
             origin: 'top'
@@ -244,6 +256,7 @@
             top: this._viewboxProperties.top + adjustment,
             left: this._viewboxProperties.left, position: 'absolute'
           };
+
           // apply browser rounding
           this._textareaPosition.top = this.applyBrowserRounding(this._textareaPosition.top);
           this._textareaPosition.left = this.applyBrowserRounding(this._textareaPosition.left);
@@ -280,27 +293,6 @@
 
         let formattedContent = this.ApplyLineBreaks();
         let textLines = formattedContent.split('\n');
-
-        // The line-height is inconsistent in firefox and possibly other browsers (except Chrome). The line-height
-        // changes depending on the # of lines in the textarea. Therefore, it can't be assumed as (this._textareaProperties.fontSize * this.lineHeight)
-        // all the time. Hence normalize line-height by taking average of (this._textareaProperties.fontSize * this.lineHeight) & computed value based on the number of lines in the textarea.                
-        // let lineHeightBasedOnNumLines = (parseFloat(this._textarea.style.height) || 0) / textLines.length;
-        // this._computedLineHeight = (this._lineHeightBasedOnFontsize + lineHeightBasedOnNumLines) / 2;
-        this._computedLineHeight = this._lineHeightBasedOnFontsize;
-
-        // handle OS and Browser specific issues
-        if (this._os.mac) {
-          switch (this._browser) {
-            case 'Chrome':
-            case 'Safari':
-              this._computedLineHeight = Math.floor(this._computedLineHeight);
-              break;
-
-            default:
-              break;
-          }
-        }
-        ///////////////
 
         let counter = 0;
         textLines.map(key => {
@@ -352,6 +344,9 @@
         }
         switch (this._browser) {
           case 'Chrome':
+            num = Math.ceil(num);
+            break;
+          case 'MSIE':
             num = Math.ceil(num);
             break;
 

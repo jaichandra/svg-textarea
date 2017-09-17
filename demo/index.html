@@ -14,18 +14,29 @@
   <link rel="import" href="../svg-textarea.html">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700">
 
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .svgcontent {
+      overflow: visible;
+      padding: 0px;
+      font-size: 16px;
+    }
+  </style>
   <custom-style>
     <style is="custom-style" include="demo-pages-shared-styles">
       body {
         font-family: 'Open Sans', sans-serif;
         -webkit-font-smoothing: antialiased;
       }
-
-      .svgcontent {
+      /* .svgcontent {
         overflow: visible;
         padding: 0px;
         font-size: 33px;
-      }
+      } */
     </style>
   </custom-style>
 </head>
@@ -37,7 +48,7 @@
   </svg>
   <svg-textarea svg-text-id="svgtext1" adjust-baseline="true"></svg-textarea>
 
-  <div class="vertical-section-container centered">
+  <!-- <div class="vertical-section-container centered">
     <h3>svg-textarea Demo</h3>
     <demo-snippet>
       <template>
@@ -47,7 +58,7 @@
         </svg>
 
       </template>
-    </demo-snippet>
+    </demo-snippet> -->
   </div>
   <!-- <p></p>
   <p></p>
