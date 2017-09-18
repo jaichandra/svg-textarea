@@ -256,9 +256,32 @@
           return;
 
         switch (this._browser) {
+          case 'Chrome':
+            if (this.adjustments['Chrome']) {
+              this._textareaPosition.top += (parseFloat(this.adjustments['Chrome'].top) || 0);
+              this._textareaPosition.left += (parseFloat(this.adjustments['Chrome'].left) || 0);
+            }
+            break;
+
           case 'Firefox':
-            this._textareaPosition.top += (parseFloat(this.adjustments['Firefox'].top) || 0);
-            this._textareaPosition.left += (parseFloat(this.adjustments['Firefox'].left) || 0);
+            if (this.adjustments['Firefox']) {
+              this._textareaPosition.top += (parseFloat(this.adjustments['Firefox'].top) || 0);
+              this._textareaPosition.left += (parseFloat(this.adjustments['Firefox'].left) || 0);
+            }
+            break;
+
+          case 'Safari':
+            if (this.adjustments['Safari']) {
+              this._textareaPosition.top += (parseFloat(this.adjustments['Safari'].top) || 0);
+              this._textareaPosition.left += (parseFloat(this.adjustments['Safari'].left) || 0);
+            }
+            break;
+
+          case 'MSIE':
+            if (this.adjustments['MSIE']) {
+              this._textareaPosition.top += (parseFloat(this.adjustments['MSIE'].top) || 0);
+              this._textareaPosition.left += (parseFloat(this.adjustments['MSIE'].left) || 0);
+            }
             break;
 
           default:
