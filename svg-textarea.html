@@ -227,7 +227,7 @@
         if (this._textareaPosition) {
           styles = this._textareaPosition;
         } else {
-          styles = { top: this._viewboxProperties.top, left: this._viewboxProperties.left, position: 'fixed' };
+          styles = { top: this._viewboxProperties.top, left: this._viewboxProperties.left };
         }
         Object.assign(this._textarea.style, this._textareaProperties, this.convertToCSS(styles));
       }
@@ -237,7 +237,7 @@
           let adjustment = this._viewboxProperties.height - ta.getBoundingClientRect().height;
           this._textareaPosition = {
             top: this._viewboxProperties.top + adjustment,
-            left: this._viewboxProperties.left, position: 'absolute'
+            left: this._viewboxProperties.left
           };
 
           // apply user adjustments
