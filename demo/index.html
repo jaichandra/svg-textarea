@@ -23,7 +23,24 @@
     .svgcontent {
       overflow: visible;
       padding: 0px;
+    }
+
+    #svgcontent1 {
       font-size: 16px;
+      height: 50px;
+      border: 1px solid #4691CF
+    }
+
+    #svgcontent2 {
+      font-size: 27px;
+      height: 80px;
+      border: 2px solid red;
+    }
+
+    #svgcontent3 {
+      font-size: 51px;
+      height: 120px;
+      border: 5px solid green;
     }
   </style>
   <custom-style>
@@ -34,39 +51,66 @@
       }
     </style>
   </custom-style>
+
+  <script>
+    // adjustment for 16px font
+    var adjustments1 = {
+      'Firefox': {
+        top: -0.3,
+        left: 0.9
+      }
+    }
+
+    // adjustment for 27px & 51px font
+    var adjustments2 = {
+      'Firefox': {
+        left: 0.4
+      }
+    }
+
+    window.addEventListener('WebComponentsReady', function (e) {
+      var ta1 = document.getElementById('ta1');
+      ta1.adjustments = adjustments1;
+
+      var ta2 = document.getElementById('ta2');
+      ta2.adjustments = adjustments2;
+      var ta3 = document.getElementById('ta3');
+      ta3.adjustments = adjustments2;
+    });
+  </script>
+
 </head>
 
 <body>
 
-  <svg class="svgcontent" style="border: 1px solid #4691CF">
+  <svg id="svgcontent1" class="svgcontent">
     <text id="svgtext1" y="14">Edit me...</text>
   </svg>
-  <svg-textarea svg-text-id="svgtext1"></svg-textarea>
+  <svg-textarea id="ta1" svg-text-id="svgtext1"></svg-textarea>
 
-  <!-- <div class="vertical-section-container centered">
-    <h3>svg-textarea Demo</h3>
+  <div class="vertical-section-container centered">
+    <h3>Inside another web component</h3>
     <demo-snippet>
       <template>
-        <svg-textarea svg-text-id="svgtext2"></svg-textarea>
-        <svg class="svgcontent" width="100%" style="border: 0px solid red">
-          <text id="svgtext2"></text>
+        <svg-textarea id="ta2" svg-text-id="svgtext2"></svg-textarea>
+        <svg id="svgcontent2" class="svgcontent">
+          <text id="svgtext2" y="24"></text>
         </svg>
-
       </template>
-    </demo-snippet> 
-  </div>-->
-  <!-- <p></p>
+    </demo-snippet>
+  </div>
+  <p></p>
   <p></p>
   <div>
-    <h3>testing</h3>
+    <h3>Inside Div</h3>
     <div>
-      <svg-textarea svg-text-id="svgtext2"></svg-textarea>
-      <svg class="svgcontent" width="100%" style="border: 0px solid red">
-        <text id="svgtext2"></text>
+      <svg id="svgcontent3" class="svgcontent">
+        <text id="svgtext3" y="50"></text>
       </svg>
+      <svg-textarea id="ta3" svg-text-id="svgtext3"></svg-textarea>
 
     </div>
-  </div> -->
+  </div>
 </body>
 
 </html>

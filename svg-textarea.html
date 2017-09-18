@@ -62,11 +62,17 @@
             type: String,
             value: ''
           },
-          topOffset: {
-            value: 0
-          },
-          leftOffset: {
-            value: 0
+          // topOffset: {
+          //   value: 0
+          // },
+          // leftOffset: {
+          //   value: 0
+          // },
+          adjustments: {
+            reflectToAttribute: true,
+            value: function () {
+              return null;
+            }
           },
           _computedLineHeight: {
             value: 0
@@ -234,20 +240,30 @@
             left: this._viewboxProperties.left, position: 'absolute'
           };
 
+          // apply user adjustments
+          this.applyUserAdjustments();
+
           // apply browser rounding for height values as different browsers handle it differently
           this._textareaPosition.top = this.applyBrowserRounding(this._textareaPosition.top);
 
-          // apply user adjustments
-          this._textareaPosition = this.applyUserAdjustments(this._textareaPosition);
         }
         Object.assign(ta.style, this.convertToCSS(this._textareaPosition));
       }
 
       // if user specific offsets are set, add those in.
-      applyUserAdjustments(position) {
-        position.top = position.top + (parseFloat(this.topOffset) || 0);
-        position.left = position.left + (parseFloat(this.leftOffset) || 0);
-        return position;
+      applyUserAdjustments() {
+        if (!this.adjustments)
+          return;
+
+        switch (this._browser) {
+          case 'Firefox':
+            this._textareaPosition.top += (parseFloat(this.adjustments['Firefox'].top) || 0);
+            this._textareaPosition.left += (parseFloat(this.adjustments['Firefox'].left) || 0);
+            break;
+
+          default:
+            break;
+        }
       }
 
       clearSVG() {
