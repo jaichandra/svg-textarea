@@ -1,6 +1,5 @@
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="../polymer/lib/utils/render-status.html">
-<!-- <link rel="import" href="fontmetrics.html"> -->
 
 <dom-module id="svg-textarea">
   <template>
@@ -54,20 +53,10 @@
             type: Number,
             value: 1.2 // set initial vertical position
           },
-          metrics: {
-            type: Object,
-            value: {}
-          },
           content: {
             type: String,
             value: ''
           },
-          // topOffset: {
-          //   value: 0
-          // },
-          // leftOffset: {
-          //   value: 0
-          // },
           adjustments: {
             reflectToAttribute: true,
             value: function () {
@@ -75,9 +64,6 @@
             }
           },
           _computedLineHeight: {
-            value: 0
-          },
-          _lineHeightBasedOnFontsize: {
             value: 0
           },
           _os: {
@@ -176,10 +162,9 @@
           this.isTextareaPositionCaptured = true;
           this.adjustTextareaPosition(this._textarea);
         }
-        this.test();
       }
 
-      test() {
+      log() {
         let props = this.getElementProperties(this._viewbox);
         let ta = {};
         if (this._textarea)
@@ -245,7 +230,6 @@
 
           // apply browser rounding for height values as different browsers handle it differently
           this._textareaPosition.top = this.applyBrowserRounding(this._textareaPosition.top);
-
         }
         Object.assign(ta.style, this.convertToCSS(this._textareaPosition));
       }
@@ -317,7 +301,6 @@
 
         // destroy the textarea
         if (this._textarea) {
-          this.test();
           this.shadowRoot.removeChild(this._textarea);
           this._textarea = null;
         }

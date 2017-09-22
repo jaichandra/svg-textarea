@@ -11,16 +11,26 @@ Add `<svg-textarea>` element as a sibling to the `svg` container. Pass the ID of
     <text id="svgtext"></text>
 </svg>
 
-<svg-textarea svg-text-id="svgtext" adjust-baseline="true"></svg-textarea>
+<svg-textarea svg-text-id="svgtext"></svg-textarea>
 ```
 
 ## Properties
 
 * `svg-text-id`: The id of the svg `<text>` element.
-* `adjust-baseline`: (default `false`) Text in SVG by default uses the font baseline for positioning causing it to shift to the top of the svg container. Set it to `true` to let the component auto-adjust the postion.
 * `content`: returns the text content
-* `top-offset`: The component is adjusted to `Open Sans` Google font and works pretty well for font sizes between 10-50px. However depending on your `font-family` and `font-size`, you might notice some shift in text when edit mode is enabled. Use `top-offset` to adjust the top position. You can pass `+ve` or `-ve` values. These values are relative to the current position of textarea.
-* `left-offset`: Use `left-offset` to adjust the left position. You can pass `+ve` or `-ve` values. These values are relative to the current position of textarea.
+* `adjustments`: The component is adjusted to `Open Sans` Google font and works pretty well for font sizes between 10-50px. However depending on your `font-family` and `font-size`, you might notice some shift in text when edit mode is enabled. Use the `adjustments` property to pass the `top` and `left` position for each browser (`Chrome`, `Firefox`, `MSIE`, `Safari`). You can pass `+ve` or `-ve` values. These values are relative to the current position of textarea.
+
+```
+  {
+    'Firefox': {
+      left: 0.4
+    },
+    'Safari': {
+      top: 0.3
+    }
+  }
+```
+Checkout the demo for examples.
 
 ## Browser compatibility
 
