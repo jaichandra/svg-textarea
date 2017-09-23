@@ -45,6 +45,13 @@
           },
           // ID of the svg <text> element which needs to be made editable
           svgTextId: String,
+          // or you can pass svg <text> element reference
+          svgTextEl: {
+            value: function () {
+              return null;
+            },
+            observer: '_svgTextElChanged'
+          },
           maxHeight: {
             type: Number,
             value: 1000
@@ -103,6 +110,16 @@
         };
       }
 
+      _svgTextElChanged(newValue, oldValue) {
+        if (oldValue == newValue) {
+          return;
+        }
+        this._viewbox = this.prepareViewbox();
+        if (this._viewbox) {
+          this.initialize();
+        }
+      }
+
       connectedCallback() {
         super.connectedCallback();
 
@@ -110,11 +127,17 @@
         this._browser = this.getBrowser();
         // prepare the viewbox based on the svgTextID reference
         this._viewbox = this.prepareViewbox();
+        if (this._viewbox) {
+          this.initialize();
+        } // else svgTextEl is not set yet. call initialize from setter method
+      }
+
+      initialize() {
         this.addText(this._spacer);
 
         let viewboxStyles = getComputedStyle(this._viewbox);
         this._textareaProperties.fontSize = viewboxStyles.fontSize;
-        this._computedLineHeight = (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
+        this._computedLineHeight = this._computedLineHeight || (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
 
         // handle OS and Browser specific issues for line-height
         if (this._os.mac) {
@@ -129,9 +152,9 @@
           }
         }
 
-        Polymer.RenderStatus.beforeNextRender(this, function () {
-          this._viewbox.addEventListener('click', this.makeEditable.bind(this));
-        });
+        this._viewbox.addEventListener('click', this.makeEditable.bind(this));
+        // Polymer.RenderStatus.beforeNextRender(this, function () {
+        // });
       }
 
       handleBlur(e) {
@@ -173,9 +196,16 @@
       }
 
       prepareViewbox() {
-        let elem = document.querySelector('#' + this.svgTextId);
-        if (elem == null) {
-          throw "Invalid Reference: `svgTextId` must refer to a valid SVG Text element";
+        if (this._viewbox) {
+          return this._viewbox;
+        }
+
+        let elem;
+        if (this.svgTextId) {
+          elem = document.querySelector('#' + this.svgTextId);
+          if (elem == null) {
+            throw "Invalid Reference: `svgTextId` must refer to a valid SVG Text element";
+          }
         }
         return elem;
       }
