@@ -4,7 +4,7 @@ A Polymer 2 element for converting any SVG <text> element into an editable multi
 
 ## Usage
 
-Add `<svg-textarea>` element as a sibling to the `svg` container. Pass the ID of the SVG Text element to `svg-textarea` to make it the `<text>` element editable
+Add `<svg-textarea>` element as a sibling to the `svg` container. Pass the ID of the SVG `<text>` element to `svg-textarea` to make it editable.
 
 ```
 <svg width="100%" style="border: 1px solid red">
