@@ -77,16 +77,12 @@
             value: { mac: false, win: false, unix: false, linux: false }
           },
           _browser: String,
-          _viewbox: {
+          svgTextElProperties: {
             value: function () {
               return null;
             }
           },
-          _viewboxProperties: {
-            value: function () {
-              return null;
-            }
-          },
+          _initialized: Boolean,
           // spacer string to fill in the <text> initially so that user can hover on the element
           _spacer: {
             value: '     '
@@ -114,8 +110,7 @@
         if (oldValue == newValue) {
           return;
         }
-        this._viewbox = this.prepareViewbox();
-        if (this._viewbox) {
+        if (this.svgTextEl) {
           this.initialize();
         }
       }
@@ -126,16 +121,21 @@
         this.getOS();
         this._browser = this.getBrowser();
         // prepare the viewbox based on the svgTextID reference
-        this._viewbox = this.prepareViewbox();
-        if (this._viewbox) {
+        this.svgTextEl = this.prepareViewbox();
+        if (this.svgTextEl) {
           this.initialize();
         } // else svgTextEl is not set yet. call initialize from setter method
       }
 
       initialize() {
+        if (this._initialized) {
+          return;
+        }
+        this._initialized = true;
+
         this.addText(this._spacer);
 
-        let viewboxStyles = getComputedStyle(this._viewbox);
+        let viewboxStyles = getComputedStyle(this.svgTextEl);
         this._textareaProperties.fontSize = viewboxStyles.fontSize;
         this._computedLineHeight = this._computedLineHeight || (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
 
@@ -152,7 +152,7 @@
           }
         }
 
-        this._viewbox.addEventListener('click', this.makeEditable.bind(this));
+        this.svgTextEl.addEventListener('click', this.makeEditable.bind(this));
         // Polymer.RenderStatus.beforeNextRender(this, function () {
         // });
       }
@@ -167,7 +167,7 @@
        * Begin by initializing the properties required to position the textarea
        */
       makeEditable() {
-        this._viewboxProperties = this._viewboxProperties || this.getElementProperties(this._viewbox);
+        this.svgTextElProperties = this.svgTextElProperties || this.getElementProperties(this.svgTextEl);
 
         let range = this.getSelectionRange();
         this.showTextarea(true, range);
@@ -188,7 +188,7 @@
       }
 
       log() {
-        let props = this.getElementProperties(this._viewbox);
+        let props = this.getElementProperties(this.svgTextEl);
         let ta = {};
         if (this._textarea)
           ta = this._textarea.getBoundingClientRect();
@@ -196,8 +196,8 @@
       }
 
       prepareViewbox() {
-        if (this._viewbox) {
-          return this._viewbox;
+        if (this.svgTextEl) {
+          return this.svgTextEl;
         }
 
         let elem;
@@ -242,17 +242,17 @@
         if (this._textareaPosition) {
           styles = this._textareaPosition;
         } else {
-          styles = { top: this._viewboxProperties.top, left: this._viewboxProperties.left };
+          styles = { top: this.svgTextElProperties.top, left: this.svgTextElProperties.left };
         }
         Object.assign(this._textarea.style, this._textareaProperties, this.convertToCSS(styles));
       }
 
       adjustTextareaPosition(ta) {
         if (!this._textareaPosition) {
-          let adjustment = this._viewboxProperties.height - ta.getBoundingClientRect().height;
+          let adjustment = this.svgTextElProperties.height - ta.getBoundingClientRect().height;
           this._textareaPosition = {
-            top: this._viewboxProperties.top + adjustment,
-            left: this._viewboxProperties.left
+            top: this.svgTextElProperties.top + adjustment,
+            left: this.svgTextElProperties.left
           };
 
           // apply user adjustments
@@ -304,8 +304,8 @@
       }
 
       clearSVG() {
-        while (this._viewbox.lastChild) {
-          this._viewbox.removeChild(this._viewbox.lastChild);
+        while (this.svgTextEl.lastChild) {
+          this.svgTextEl.removeChild(this.svgTextEl.lastChild);
         }
       }
 
@@ -372,7 +372,7 @@
         // identify offsets on the textarea content based on above data
         let o = { startOffset: 0, endOffset: 0 };
         let charCount = 0;
-        let nodes = this._viewbox.childNodes;
+        let nodes = this.svgTextEl.childNodes;
         for (var i = 0; i < nodes.length; i++) {
           var element = nodes[i];
           let textNode = element.firstChild;
@@ -480,8 +480,8 @@
         newText.setAttributeNS(null, "x", "0");
         newText.setAttributeNS(null, 'style', 'white-space: pre');
 
-        newText.setAttributeNS(null, "dy", (this._viewbox.childNodes.length == 0) ? 0 : this._computedLineHeight);
-        this._viewbox.appendChild(newText);
+        newText.setAttributeNS(null, "dy", (this.svgTextEl.childNodes.length == 0) ? 0 : this._computedLineHeight);
+        this.svgTextEl.appendChild(newText);
       }
 
       convertToCSS(o) {
