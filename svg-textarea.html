@@ -248,10 +248,8 @@
         let styles;
         if (this._textareaProperties.top) {
           styles = { top: this._textareaProperties.top, left: this._textareaProperties.left };
-          //, width: this._textareaProperties.width
         } else {
           styles = { top: this.svgTextElProperties.top, left: this.svgTextElProperties.left };
-          //, width: this.svgTextElProperties.width
         }
         Object.assign(this._textarea.style, this._textareaProperties, this.convertToCSS(styles));
       }
@@ -327,7 +325,7 @@
           return;
         }
 
-        let formattedContent = this.ApplyLineBreaks();
+        let formattedContent = this.getMultilineText(this.content, parseFloat(this._textareaProperties.width));
         let textLines = formattedContent.split('\n');
 
         let counter = 0;
@@ -411,27 +409,35 @@
         };
       }
 
-      ApplyLineBreaks() {
-        var oTextarea = this._textarea;
-        oTextarea.setAttribute("wrap", "off");
-        var strRawValue = oTextarea.value;
-        oTextarea.value = "";
-        var nEmptyWidth = oTextarea.scrollWidth;
+      getMultilineText(strRawValue, width) {
+        var testElem = document.createElement("div");
+        Object.assign(testElem.style, this._textareaProperties, {
+          position: 'fixed',
+          left: '-999px',
+          width: width + 'px',
+          height: 'auto',
+          overflow: 'auto'
+        });
+        testElem.textContent = 'test';
+        document.body.appendChild(testElem);
+        var lineHeight = testElem.offsetHeight;
+        var nEmptyWidth = testElem.scrollWidth;
+        testElem.textContent = '';
 
         var nLastWrappingIndex = -1;
 
         function testBreak(strTest) {
-          oTextarea.value = strTest;
-          return oTextarea.scrollWidth > nEmptyWidth;
+          testElem.textContent = strTest;
+          return testElem.scrollWidth > nEmptyWidth || testElem.offsetHeight > lineHeight;
         }
+
         function findNextBreakLength(strSource, nLeft, nRight) {
           var nCurrent;
           if (typeof (nLeft) == 'undefined') {
             nLeft = 0;
             nRight = -1;
             nCurrent = 64;
-          }
-          else {
+          } else {
             if (nRight == -1)
               nCurrent = nLeft * 2;
             else if (nRight - nLeft <= 1)
@@ -451,7 +457,8 @@
           return findNextBreakLength(strSource, nLeft, nRight);
         }
 
-        var i = 0, j;
+        var i = 0,
+          j;
         var strNewValue = "";
         while (i < strRawValue.length) {
           var breakOffset = findNextBreakLength(strRawValue.substr(i));
@@ -471,8 +478,7 @@
           strNewValue += strRawValue.substr(i, nLineLength) + "\n";
           i += nLineLength;
         }
-        oTextarea.value = strNewValue;
-        oTextarea.setAttribute("wrap", "");
+        document.body.removeChild(testElem);
         return strNewValue;
       }
 
