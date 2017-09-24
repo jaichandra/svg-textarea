@@ -43,7 +43,8 @@
       border: 5px solid green;
     }
 
-    #svgcontent4 {
+    #svgcontent4,
+    #svgcontent5 {
       font-size: 77px;
       height: 150px;
       border: 1px solid #4691CF;
@@ -96,6 +97,10 @@
       var ta4 = new SvgTextarea();
       ta4.svgTextId = 'svgtext4';
       document.body.appendChild(ta4);
+
+      var ta5 = new SvgTextarea();
+      document.body.appendChild(ta5);
+      ta5.svgTextEl = document.getElementById('svgtext5');
     });
   </script>
 
@@ -139,6 +144,17 @@
     <div>
       <svg id="svgcontent4" class="svgcontent">
         <text id="svgtext4" y="50"></text>
+      </svg>
+    </div>
+  </div>
+
+  <p></p>
+  <p></p>
+  <div>
+    <h3>Dynamically added svg-textarea2</h3>
+    <div>
+      <svg id="svgcontent5" class="svgcontent">
+        <text id="svgtext5" y="50"></text>
       </svg>
     </div>
   </div>

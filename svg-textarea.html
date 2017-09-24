@@ -88,11 +88,6 @@
             value: '     '
           },
           isTextareaPositionCaptured: Boolean,
-          _textareaPosition: {
-            value: function () {
-              return null;
-            }
-          },
           _textarea: {
             value: function () {
               return null;
@@ -100,7 +95,7 @@
           },
           _textareaProperties: {
             value: function () {
-              return { lineHeight: this.lineHeight }
+              return {};
             }
           }
         };
@@ -121,7 +116,7 @@
         this.getOS();
         this._browser = this.getBrowser();
         // prepare the viewbox based on the svgTextID reference
-        this.svgTextEl = this.prepareViewbox();
+        this.svgTextEl = this.getViewboxFromId();
         if (this.svgTextEl) {
           this.initialize();
         } // else svgTextEl is not set yet. call initialize from setter method
@@ -133,28 +128,42 @@
         }
         this._initialized = true;
 
-        this.addText(this._spacer);
-
-        let viewboxStyles = getComputedStyle(this.svgTextEl);
-        this._textareaProperties.fontSize = viewboxStyles.fontSize;
-        this._computedLineHeight = this._computedLineHeight || (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
-
-        // handle OS and Browser specific issues for line-height
-        if (this._os.mac) {
-          switch (this._browser) {
-            case 'Chrome':
-            case 'Safari':
-              this._computedLineHeight = Math.floor(this._computedLineHeight);
-              break;
-
-            default:
-              break;
-          }
+        // add dummy content incase text element is empty. Required to make the element clickable
+        if (this.svgTextEl.textContent === '') {
+          this.addText(this._spacer);
         }
 
-        this.svgTextEl.addEventListener('click', this.makeEditable.bind(this));
-        // Polymer.RenderStatus.beforeNextRender(this, function () {
-        // });
+        Polymer.RenderStatus.afterNextRender(this, function () {
+          this.svgTextElProperties = this.getElementProperties(this.svgTextEl);
+          let viewboxStyles = getComputedStyle(this.svgTextEl);
+          let ownerSvgStyles = getComputedStyle(this.svgTextEl.ownerSVGElement);
+
+          Object.assign(this._textareaProperties, {
+            fontSize: viewboxStyles.fontSize,
+            fontFamily: viewboxStyles.fontFamily,
+            color: viewboxStyles.fill,
+            transform: ownerSvgStyles.transform,
+            width: ownerSvgStyles.width,
+            lineHeight: this.lineHeight
+          });
+          this._computedLineHeight = this._computedLineHeight || (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
+
+          // handle OS and Browser specific issues for line-height
+          if (this._os.mac) {
+            switch (this._browser) {
+              case 'Chrome':
+              case 'Safari':
+                this._computedLineHeight = Math.floor(this._computedLineHeight);
+                break;
+
+              default:
+                break;
+            }
+          }
+
+          this.svgTextEl.addEventListener('click', this.makeEditable.bind(this));
+        });
+
       }
 
       handleBlur(e) {
@@ -167,8 +176,6 @@
        * Begin by initializing the properties required to position the textarea
        */
       makeEditable() {
-        this.svgTextElProperties = this.svgTextElProperties || this.getElementProperties(this.svgTextEl);
-
         let range = this.getSelectionRange();
         this.showTextarea(true, range);
 
@@ -195,7 +202,7 @@
         console.log('Yoffset:' + window.pageYOffset + ', SVG- top:' + props.top + ', height:' + props.height + ', Textarea- top:' + ta.top + ', height:' + ta.height);
       }
 
-      prepareViewbox() {
+      getViewboxFromId() {
         if (this.svgTextEl) {
           return this.svgTextEl;
         }
@@ -239,29 +246,29 @@
 
       positionTextarea() {
         let styles;
-        if (this._textareaPosition) {
-          styles = this._textareaPosition;
+        if (this._textareaProperties.top) {
+          styles = { top: this._textareaProperties.top, left: this._textareaProperties.left };
+          //, width: this._textareaProperties.width
         } else {
           styles = { top: this.svgTextElProperties.top, left: this.svgTextElProperties.left };
+          //, width: this.svgTextElProperties.width
         }
         Object.assign(this._textarea.style, this._textareaProperties, this.convertToCSS(styles));
       }
 
       adjustTextareaPosition(ta) {
-        if (!this._textareaPosition) {
+        if (!this._textareaProperties.top) {
           let adjustment = this.svgTextElProperties.height - ta.getBoundingClientRect().height;
-          this._textareaPosition = {
-            top: this.svgTextElProperties.top + adjustment,
-            left: this.svgTextElProperties.left
-          };
+          this._textareaProperties.top = this.svgTextElProperties.top + adjustment;
+          this._textareaProperties.left = this.svgTextElProperties.left;
 
           // apply user adjustments
           this.applyUserAdjustments();
 
           // apply browser rounding for height values as different browsers handle it differently
-          this._textareaPosition.top = this.applyBrowserRounding(this._textareaPosition.top);
+          this._textareaProperties.top = this.applyBrowserRounding(this._textareaProperties.top);
         }
-        Object.assign(ta.style, this.convertToCSS(this._textareaPosition));
+        Object.assign(ta.style, this.convertToCSS({ top: this._textareaProperties.top, left: this._textareaProperties.left }));
       }
 
       // if user specific offsets are set, add those in.
@@ -272,29 +279,29 @@
         switch (this._browser) {
           case 'Chrome':
             if (this.adjustments['Chrome']) {
-              this._textareaPosition.top += (parseFloat(this.adjustments['Chrome'].top) || 0);
-              this._textareaPosition.left += (parseFloat(this.adjustments['Chrome'].left) || 0);
+              this._textareaProperties.top += (parseFloat(this.adjustments['Chrome'].top) || 0);
+              this._textareaProperties.left += (parseFloat(this.adjustments['Chrome'].left) || 0);
             }
             break;
 
           case 'Firefox':
             if (this.adjustments['Firefox']) {
-              this._textareaPosition.top += (parseFloat(this.adjustments['Firefox'].top) || 0);
-              this._textareaPosition.left += (parseFloat(this.adjustments['Firefox'].left) || 0);
+              this._textareaProperties.top += (parseFloat(this.adjustments['Firefox'].top) || 0);
+              this._textareaProperties.left += (parseFloat(this.adjustments['Firefox'].left) || 0);
             }
             break;
 
           case 'Safari':
             if (this.adjustments['Safari']) {
-              this._textareaPosition.top += (parseFloat(this.adjustments['Safari'].top) || 0);
-              this._textareaPosition.left += (parseFloat(this.adjustments['Safari'].left) || 0);
+              this._textareaProperties.top += (parseFloat(this.adjustments['Safari'].top) || 0);
+              this._textareaProperties.left += (parseFloat(this.adjustments['Safari'].left) || 0);
             }
             break;
 
           case 'MSIE':
             if (this.adjustments['MSIE']) {
-              this._textareaPosition.top += (parseFloat(this.adjustments['MSIE'].top) || 0);
-              this._textareaPosition.left += (parseFloat(this.adjustments['MSIE'].left) || 0);
+              this._textareaProperties.top += (parseFloat(this.adjustments['MSIE'].top) || 0);
+              this._textareaProperties.left += (parseFloat(this.adjustments['MSIE'].left) || 0);
             }
             break;
 
