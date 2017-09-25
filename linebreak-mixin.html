@@ -78,6 +78,9 @@
           }
           strNewValue += lineNewValue + '\n';
         }
+        // remove last \n
+        strNewValue = strNewValue.trim();
+
         document.body.removeChild(testElem);
         return strNewValue;
       }

@@ -14,14 +14,14 @@
       #textarea {
         font-family: inherit;
         font-size: inherit;
-        border: 0px solid #000;
+        border: 0px solid transparent;
         overflow: hidden;
         position: absolute;
         outline: none;
-        background: transparent;
         padding: 0;
         margin: 0;
         transform: none;
+        transform-origin: 0px 0px;
         line-height: 1.2;
         resize: none;
       }
@@ -41,11 +41,16 @@
       static get is() { return 'svg-textarea'; }
       static get properties() {
         return {
-          svg: {
-            type: String,
-          },
+
+          svg: String,
+
+          width: Number,
+
+          height: Number,
+
           // ID of the svg <text> element which needs to be made editable
           svgTextId: String,
+
           // or you can pass svg <text> element reference
           svgTextEl: {
             value: function () {
@@ -53,47 +58,58 @@
             },
             observer: '_svgTextElChanged'
           },
+
           maxHeight: {
             type: Number,
             value: 1000
           },
+
           lineHeight: {
             type: Number,
             value: 1.2 // set initial vertical position
           },
-          content: {
-            type: String,
-            value: ''
-          },
+
+          content: String,
+
           adjustments: {
             reflectToAttribute: true,
             value: function () {
               return null;
             }
           },
-          _computedLineHeight: {
-            value: 0
-          },
+
+          _invalidated: Boolean,
+
+          _computedLineHeight: Number,
+
           _os: {
             value: { mac: false, win: false, unix: false, linux: false }
           },
+
           _browser: String,
-          svgTextElProperties: {
+
+          _svgTextElProperties: {
             value: function () {
               return null;
             }
           },
+
           _initialized: Boolean,
+
           // spacer string to fill in the <text> initially so that user can hover on the element
           _spacer: {
+            type: String,
             value: '     '
           },
-          isTextareaPositionCaptured: Boolean,
+
+          _isTextareaPositionCaptured: Boolean,
+
           _textarea: {
             value: function () {
               return null;
             }
           },
+
           _textareaProperties: {
             value: function () {
               return {};
@@ -111,6 +127,18 @@
         }
       }
 
+      invalidate() {
+        if (!this._invalidated) {
+          this._invalidated = true;
+          Polymer.RenderStatus.afterNextRender(this, function () {
+            setTimeout(() => {
+              this._invalidated = false;
+              this._validate();
+            }, 500);
+          });
+        }
+      }
+
       connectedCallback() {
         super.connectedCallback();
 
@@ -120,7 +148,7 @@
         this.svgTextEl = this.getViewboxFromId();
         if (this.svgTextEl) {
           this.initialize();
-        } // else svgTextEl is not set yet. call initialize from setter method
+        } // else svgTextEl is not set yet. call initialize from _svgTextElChanged setter method
       }
 
       initialize() {
@@ -129,42 +157,93 @@
         }
         this._initialized = true;
 
-        // add dummy content incase text element is empty. Required to make the element clickable
-        if (this.svgTextEl.textContent === '') {
-          this.addText(this._spacer);
-        }
-
         Polymer.RenderStatus.afterNextRender(this, function () {
-          this.svgTextElProperties = this.getElementProperties(this.svgTextEl);
-          let viewboxStyles = getComputedStyle(this.svgTextEl);
-          let ownerSvgStyles = getComputedStyle(this.svgTextEl.ownerSVGElement);
 
-          Object.assign(this._textareaProperties, {
-            fontSize: viewboxStyles.fontSize,
-            fontFamily: viewboxStyles.fontFamily,
-            color: viewboxStyles.fill,
-            transform: ownerSvgStyles.transform,
-            width: ownerSvgStyles.width,
-            lineHeight: this.lineHeight
-          });
-          this._computedLineHeight = this._computedLineHeight || (parseFloat(this._textareaProperties.fontSize) || 0) * this.lineHeight;
+          this.computeTextareaProperties();
 
-          // handle OS and Browser specific issues for line-height
-          if (this._os.mac) {
-            switch (this._browser) {
-              case 'Chrome':
-              case 'Safari':
-                this._computedLineHeight = Math.floor(this._computedLineHeight);
-                break;
+          this.initializeSVGText();
 
-              default:
-                break;
-            }
-          }
+          this.computeSVGTextProperties();
 
           this.svgTextEl.addEventListener('click', this.makeEditable.bind(this));
-        });
 
+        });
+      }
+
+      _validate() {
+        this.resetProperties();
+
+        this.computeTextareaProperties();
+
+        this.computeSVGTextProperties();
+      }
+
+      /**
+       * _svgTextElProperties calc
+       */
+      initializeSVGText() {
+        this.content = this.svgTextEl.textContent;
+        if (this.content !== '') {
+          //empty text node and create tspan elements
+          while (this.svgTextEl.firstChild) {
+            this.svgTextEl.removeChild(this.svgTextEl.firstChild);
+          }
+          this.createSVGText(this.content, parseFloat(this._textareaProperties.width));
+        } else {
+          // add dummy content incase text element is empty. Required to make the element clickable
+          this.addText(this._spacer);
+        }
+      }
+
+      /**
+       * get svgTextEl properties after initial value has been set
+       */
+      computeSVGTextProperties() {
+        this._svgTextElProperties = this.getElementProperties(this.svgTextEl);
+      }
+
+      /**
+       * _textareaProperties calc
+       */
+      computeTextareaProperties() {
+        let viewboxStyles = getComputedStyle(this.svgTextEl);
+        let ownerSvgStyles = getComputedStyle(this.svgTextEl.ownerSVGElement);
+
+        // _computedLineHeight calc
+        // **************************
+        this._computedLineHeight = (parseFloat(viewboxStyles.fontSize) || 0) * this.lineHeight;
+        // handle OS and Browser specific issues for line-height
+        if (this._os.mac) {
+          switch (this._browser) {
+            case 'Chrome':
+            case 'Safari':
+              this._computedLineHeight = Math.floor(this._computedLineHeight);
+              break;
+            default:
+              break;
+          }
+        }
+
+        // _textareaProperties calc
+        // **************************
+        Object.assign(this._textareaProperties, {
+          fontSize: viewboxStyles.fontSize,
+          fontFamily: viewboxStyles.fontFamily,
+          color: viewboxStyles.fill,
+          transform: ownerSvgStyles.transform,
+          width: this.width || ownerSvgStyles.width,
+          height: this.height || this._computedLineHeight,
+          lineHeight: this.lineHeight
+        });
+      }
+
+      /**
+       * clear values
+       */
+      resetProperties() {
+        this._textareaProperties = {};
+        this._svgTextElProperties = {};
+        this._isTextareaPositionCaptured = false;
       }
 
       handleBlur(e) {
@@ -189,8 +268,8 @@
         let h = Math.min(this._textarea.scrollHeight, this.maxHeight) + 'px';
         this._textarea.style.height = this._textareaProperties.height = h;
 
-        if (!this.isTextareaPositionCaptured) {
-          this.isTextareaPositionCaptured = true;
+        if (!this._isTextareaPositionCaptured) {
+          this._isTextareaPositionCaptured = true;
           this.adjustTextareaPosition(this._textarea);
         }
       }
@@ -250,16 +329,16 @@
         if (this._textareaProperties.top) {
           styles = { top: this._textareaProperties.top, left: this._textareaProperties.left };
         } else {
-          styles = { top: this.svgTextElProperties.top, left: this.svgTextElProperties.left };
+          styles = { top: this._svgTextElProperties.top, left: this._svgTextElProperties.left };
         }
-        Object.assign(this._textarea.style, this._textareaProperties, this.convertToCSS(styles));
+        Object.assign(this._textarea.style, this.convertToCSS(styles), this.convertToCSS(this._textareaProperties));
       }
 
       adjustTextareaPosition(ta) {
         if (!this._textareaProperties.top) {
-          let adjustment = this.svgTextElProperties.height - ta.getBoundingClientRect().height;
-          this._textareaProperties.top = this.svgTextElProperties.top + adjustment;
-          this._textareaProperties.left = this.svgTextElProperties.left;
+          let adjustment = this._svgTextElProperties.height - ta.getBoundingClientRect().height;
+          this._textareaProperties.top = this._svgTextElProperties.top + adjustment;
+          this._textareaProperties.left = this._svgTextElProperties.left;
 
           // apply user adjustments
           this.applyUserAdjustments();
@@ -387,7 +466,21 @@
         let nodes = this.svgTextEl.childNodes;
         for (var i = 0; i < nodes.length; i++) {
           var element = nodes[i];
-          let textNode = element.firstChild;
+          let textNode;
+          switch (element.nodeType) {
+            case 1:
+              textNode = element.firstChild;
+              break;
+
+            case 3:
+              textNode = element;
+              break;
+
+            default:
+              break;
+          }
+
+
           if (textNode === range.startContainer) {
             o.startOffset = charCount + range.startOffset;
           }
@@ -433,6 +526,10 @@
 
       convertToCSS(o) {
         Object.keys(o).map((e, index) => {
+          // properties to exclude from adding 'px'
+          if (e === 'lineHeight')
+            return;
+
           if (typeof o[e] === 'number') {
             o[e] += 'px'
           }
