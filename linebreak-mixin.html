@@ -79,7 +79,7 @@
           strNewValue += lineNewValue + '\n';
         }
         // remove last \n
-        strNewValue = strNewValue.trim();
+        strNewValue = strNewValue.replace(/\n$/, "");
 
         document.body.removeChild(testElem);
         return strNewValue;
