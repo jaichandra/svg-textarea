@@ -15,10 +15,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700">
 
   <style>
-    body {
+    /* body {
       font-family: 'Open Sans', sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
+      -webkit-font-smoothing: antialiased;      
+    } */
 
     .svgcontent {
       overflow: visible;
@@ -28,7 +28,7 @@
     #svgcontent1 {
       font-size: 16px;
       height: 50px;
-      border: 1px solid #4691CF
+      /* border: 1px solid #4691CF */
     }
 
     #svgcontent2 {
@@ -55,6 +55,8 @@
       body {
         font-family: 'Open Sans', sans-serif;
         -webkit-font-smoothing: antialiased;
+        margin: 0;
+        padding: 0;
       }
     </style>
   </custom-style>
@@ -82,8 +84,8 @@
     }
 
     window.addEventListener('WebComponentsReady', function (e) {
-      var ta1 = document.getElementById('ta1');
-      ta1.adjustments = adjustments1;
+      // var ta1 = document.getElementById('ta1');
+      // ta1.adjustments = adjustments1;
 
       // dynamically create svgTextarea
       var ta2 = document.getElementById('ta2');
@@ -109,7 +111,7 @@
 <body>
 
   <svg id="svgcontent1" class="svgcontent" width="100">
-    <text id="svgtext1" y="14">Edit me...</text>
+    <text id="svgtext1" x="0" y="17">Simple text</text>
   </svg>
   <svg-textarea id="ta1" svg-text-id="svgtext1"></svg-textarea>
 
@@ -119,7 +121,7 @@
       <template>
         <svg-textarea id="ta2"></svg-textarea>
         <svg id="svgcontent2" class="svgcontent">
-          <text id="svgtext2" y="24"></text>
+          <text id="svgtext2" y="24">tst</text>
         </svg>
       </template>
     </demo-snippet>

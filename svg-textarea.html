@@ -5,7 +5,7 @@
 <dom-module id="svg-textarea">
   <template>
     <style>
-       :host {
+      :host {
         display: block;
         font-size: var(--svg-textarea-font-size, inherit);
         height: var(--svg-textarea-height);
@@ -25,6 +25,13 @@
         transform-origin: 0px 0px;
         line-height: 1.2;
         resize: none;
+      }
+
+      @-moz-document url-prefix() {
+        #textarea {
+          padding: 0 2px;
+          margin: 1px 0;
+        }
       }
     </style>
   </template>
@@ -81,8 +88,6 @@
 
           _invalidated: Boolean,
 
-          _computedLineHeight: Number,
-
           _os: {
             value: { mac: false, win: false, unix: false, linux: false }
           },
@@ -115,7 +120,9 @@
             value: function () {
               return {};
             }
-          }
+          },
+
+          _textareaStyles: {}
         };
       }
 
@@ -160,11 +167,19 @@
 
         Polymer.RenderStatus.afterNextRender(this, function () {
 
-          this.computeTextareaProperties();
+          // add dummy content incase text element is empty. Required to make the element clickable
+          this.content = this.svgTextEl.textContent;
+          if (this.content == '') {
+            this.addText(this._spacer);
+          }
+
+          let ownerSvgStyles = getComputedStyle(this.svgTextEl.ownerSVGElement);
+          Object.assign(this._textareaProperties, {
+            transform: ownerSvgStyles.transform,
+            width: this.width || ownerSvgStyles.width
+          });
 
           this.initializeSVGText();
-
-          this.computeSVGTextProperties();
 
           this.svgTextEl.addEventListener('click', this.makeEditable.bind(this));
 
@@ -173,10 +188,6 @@
 
       _validate() {
         this.resetProperties();
-
-        this.computeTextareaProperties();
-
-        this.computeSVGTextProperties();
       }
 
       /**
@@ -208,33 +219,25 @@
        */
       computeTextareaProperties() {
         let viewboxStyles = getComputedStyle(this.svgTextEl);
+        let viewboxBBox = this.svgTextEl.getBBox();
         let ownerSvgStyles = getComputedStyle(this.svgTextEl.ownerSVGElement);
-
-        // _computedLineHeight calc
-        // **************************
-        this._computedLineHeight = (parseFloat(viewboxStyles.fontSize) || 0) * this.lineHeight;
-        // handle OS and Browser specific issues for line-height
-        if (this._os.mac) {
-          switch (this._browser) {
-            case 'Chrome':
-            case 'Safari':
-              this._computedLineHeight = Math.floor(this._computedLineHeight);
-              break;
-            default:
-              break;
-          }
-        }
 
         // _textareaProperties calc
         // **************************
         Object.assign(this._textareaProperties, {
+          fontStyle: viewboxStyles.fontStyle,
+          fontVariant: viewboxStyles.fontVariant,
+          fontWeight: viewboxStyles.fontWeight,
+          fontStretch: viewboxStyles.fontStretch,
           fontSize: viewboxStyles.fontSize,
           fontFamily: viewboxStyles.fontFamily,
           color: viewboxStyles.fill,
           transform: ownerSvgStyles.transform,
           width: this.width || ownerSvgStyles.width,
-          height: this.height || this._computedLineHeight,
-          lineHeight: this.lineHeight
+          height: viewboxBBox.height,
+          lineHeight: 'normal',
+          topOffset: viewboxBBox.y,
+          initialHeight: this._textareaProperties.initialHeight || viewboxBBox.height
         });
       }
 
@@ -271,7 +274,7 @@
 
         if (!this._isTextareaPositionCaptured) {
           this._isTextareaPositionCaptured = true;
-          this.adjustTextareaPosition(this._textarea);
+          // this.adjustTextareaPosition(this._textarea);
         }
       }
 
@@ -301,6 +304,10 @@
       showTextarea(flag, range) {
         if (flag) {
           let ta = this.getTextarea();
+
+          this.computeTextareaProperties();
+          this.computeSVGTextProperties();
+
           this.positionTextarea();
           this.shadowRoot.appendChild(ta);
           ta.focus();
@@ -521,8 +528,8 @@
         newText.setAttributeNS(null, "x", "0");
         newText.setAttributeNS(null, 'style', 'white-space: pre');
 
-        newText.setAttributeNS(null, "dy", (this.svgTextEl.childNodes.length == 0) ? 0 : this._computedLineHeight);
         this.svgTextEl.appendChild(newText);
+        newText.setAttributeNS(null, "dy", (this.svgTextEl.childNodes.length == 1) ? 0 : Math.round(parseFloat(this._textareaProperties.initialHeight)));
       }
 
       convertToCSS(o) {
