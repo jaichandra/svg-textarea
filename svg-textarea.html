@@ -44,6 +44,13 @@
     * @customElement
     * @polymer
     * @demo demo/index.html
+    *
+    * @dependencies
+    * Uses dom4 polyfill for new DOM Level 4 suppport
+    * https://github.com/WebReflection/dom4
+    *
+    * Include below script in your application to use svg-textarea
+    * <script src="//cdnjs.cloudflare.com/ajax/libs/dom4/2.0.0/dom4.js">
     */
     class SvgTextarea extends LinebreakMixin(Polymer.Element) {
       static get is() { return 'svg-textarea'; }
@@ -84,6 +91,12 @@
             value: function () {
               return null;
             }
+          },
+
+          // Scale between 0 - 1 value to apply to the editable text. This should the SVG tranform or viewBox scale factor.
+          scaleFactor: {
+            type: Number,
+            value: 1
           },
 
           _invalidated: Boolean,
@@ -150,8 +163,8 @@
       connectedCallback() {
         super.connectedCallback();
 
-        this.getOS();
-        this._browser = this.getBrowser();
+        // this.getOS();
+        this._browser = getBrowser();
         // prepare the viewbox based on the svgTextID reference
         this.svgTextEl = this.getViewboxFromId();
         if (this.svgTextEl) {
@@ -173,11 +186,15 @@
             this.addText(this._spacer);
           }
 
-          let ownerSvgStyles = getComputedStyle(this.svgTextEl.ownerSVGElement);
+          let elem = this.svgTextEl.closest('[transform^="scale"]') || this.svgTextEl.ownerSVGElement;
+          if (!elem) {
+            return;
+          }
+          let ownerSvgStyles = getComputedStyle(elem);
           Object.assign(this._textareaProperties, {
-            transform: ownerSvgStyles.transform,
             width: this.width || ownerSvgStyles.width
           });
+
 
           this.initializeSVGText();
 
@@ -220,7 +237,19 @@
       computeTextareaProperties() {
         let viewboxStyles = getComputedStyle(this.svgTextEl);
         let viewboxBBox = this.svgTextEl.getBBox();
-        let ownerSvgStyles = getComputedStyle(this.svgTextEl.ownerSVGElement);
+        let elem = this.svgTextEl.closest('[transform^="scale"]') || this.svgTextEl.ownerSVGElement;
+        if (!elem) {
+          return;
+        }
+
+        let ownerSvgStyles = getComputedStyle(elem);
+
+        let sFactor = 1;
+        if (this.scaleFactor) {
+          sFactor = 'scale(' + this.scaleFactor + ')';
+        } else {
+          sFactor = ownerSvgStyles.transform;
+        }
 
         // _textareaProperties calc
         // **************************
@@ -232,13 +261,23 @@
           fontSize: viewboxStyles.fontSize,
           fontFamily: viewboxStyles.fontFamily,
           color: viewboxStyles.fill,
-          transform: ownerSvgStyles.transform,
+          transform: sFactor,
           width: this.width || ownerSvgStyles.width,
           height: viewboxBBox.height,
           lineHeight: 'normal',
           topOffset: viewboxBBox.y,
           initialHeight: this._textareaProperties.initialHeight || viewboxBBox.height
         });
+
+
+        // handle transform separately for Firefox
+        // getComputedStyle doesn't return the inherited `transform` object in Firefox.
+        if (this._browser === 'Firefox') {
+          Object.assign(this._textareaProperties, {
+            transform: elem.transform.baseVal[0].matrix
+          });
+        }
+
       }
 
       /**
@@ -540,40 +579,31 @@
 
           if (typeof o[e] === 'number') {
             o[e] += 'px'
+          } else if (typeof o[e] === 'SVGMatrix') {
+            o[e] = o[e].toString();
           }
+
         });
         return o;
       }
 
-      getOS() {
-        let sAppVer = navigator.appVersion;
-        if (sAppVer.indexOf("Win") != -1) {
-          this._os.win = true;
-        } else if (sAppVer.indexOf("Mac") != -1) {
-          this._os.mac = true;
-        } else if (sAppVer.indexOf("X11") != -1) {
-          this._os.unix = true;
-        } else if (sAppVer.indexOf("Linux") != -1) {
-          this._os.linux = true;
-        }
-      }
+      // getOS() {
+      //   let sAppVer = navigator.appVersion;
+      //   if (sAppVer.indexOf("Win") != -1) {
+      //     this._os.win = true;
+      //   } else if (sAppVer.indexOf("Mac") != -1) {
+      //     this._os.mac = true;
+      //   } else if (sAppVer.indexOf("X11") != -1) {
+      //     this._os.unix = true;
+      //   } else if (sAppVer.indexOf("Linux") != -1) {
+      //     this._os.linux = true;
+      //   }
+      // }
 
-      getBrowser() {
-        let sUsrAg = navigator.userAgent;
-        if (sUsrAg.indexOf("Chrome") > -1) {
-          return 'Chrome';
-        } else if (sUsrAg.indexOf("Safari") > -1) {
-          return 'Safari';
-        } else if (sUsrAg.indexOf("Opera") > -1) {
-          return 'Opera';
-        } else if (sUsrAg.indexOf("Firefox") > -1) {
-          return 'Firefox';
-        } else if (sUsrAg.indexOf("MSIE") > -1 || sUsrAg.indexOf("Mozilla/5.0") > -1) {
-          return 'MSIE';
-        }
-      }
+
     }
 
     window.customElements.define(SvgTextarea.is, SvgTextarea);
   </script>
+  <script src="utils.js"></script>
 </dom-module>
