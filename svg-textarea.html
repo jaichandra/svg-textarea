@@ -84,7 +84,10 @@
             value: 1.2 // set initial vertical position
           },
 
-          content: String,
+          content: {
+            type: String,
+            value: null
+          },
 
           adjustments: {
             reflectToAttribute: true,
@@ -97,6 +100,15 @@
           scaleFactor: {
             type: Number,
             value: 1
+          },
+
+          /**
+           * Private properties
+           */
+
+          _textlines: {
+            type: Array,
+            value: []
           },
 
           _invalidated: Boolean,
@@ -180,22 +192,6 @@
 
         Polymer.RenderStatus.afterNextRender(this, function () {
 
-          // add dummy content incase text element is empty. Required to make the element clickable
-          this.content = this.svgTextEl.textContent;
-          if (this.content == '') {
-            this.addText(this._spacer);
-          }
-
-          let elem = this.svgTextEl.closest('[transform^="scale"]') || this.svgTextEl.ownerSVGElement;
-          if (!elem) {
-            return;
-          }
-          let ownerSvgStyles = getComputedStyle(elem);
-          Object.assign(this._textareaProperties, {
-            width: this.width || ownerSvgStyles.width
-          });
-
-
           this.initializeSVGText();
 
           this.svgTextEl.addEventListener('click', this.makeEditable.bind(this));
@@ -205,36 +201,71 @@
 
       _validate() {
         this.resetProperties();
+        this.initializeSVGText();
       }
 
       /**
        * _svgTextElProperties calc
        */
       initializeSVGText() {
-        this.content = this.svgTextEl.textContent;
-        if (this.content !== '') {
-          //empty text node and create tspan elements
-          while (this.svgTextEl.firstChild) {
-            this.svgTextEl.removeChild(this.svgTextEl.firstChild);
-          }
-          this.createSVGText(this.content, parseFloat(this._textareaProperties.width));
-        } else {
-          // add dummy content incase text element is empty. Required to make the element clickable
+        // add dummy content incase content is not set or text element is empty.
+        // Required to make the element clickable
+        this.content = this.content || this.svgTextEl.textContent;
+        if (this.content == '') {
           this.addText(this._spacer);
         }
+
+        // set default width of the text element to match the SVG container width
+        let elem = this.svgTextEl.closest('[transform^="scale"]') || this.svgTextEl.ownerSVGElement;
+        if (!elem) {
+          return;
+        }
+        let ownerSvgStyles = getComputedStyle(elem);
+        Object.assign(this._textareaProperties, {
+          width: this.width || ownerSvgStyles.width
+        });
+
+        // empty text node and create tspan elements
+        while (this.svgTextEl.firstChild) {
+          this.svgTextEl.removeChild(this.svgTextEl.firstChild);
+        }
+
+        this._textlines = this.getTextLines(this.content, parseFloat(this._textareaProperties.width));
+
+        this.computeSVGInitialLineHeight(this._textlines.shift());
+
+        this.createSVGText(this._textlines);
+
       }
 
+      computeSVGInitialLineHeight(text) {
+        this.addText(text);
+        let viewboxBBox = this.svgTextEl.getBBox();
+        Object.assign(this._textareaProperties, {
+          height: viewboxBBox.height,
+          topOffset: viewboxBBox.y,
+          initialHeight: viewboxBBox.height
+        });
+      }
+
+      getTextLines(text, width) {
+        let str = this.getMultilineText(text, width);
+        return str.split('\n');
+      }
       /**
        * get svgTextEl properties after initial value has been set
        */
       computeSVGTextProperties() {
-        this._svgTextElProperties = this.getElementProperties(this.svgTextEl);
+        this._svgTextElProperties = this.getElementClientRect(this.svgTextEl);
       }
 
       /**
        * _textareaProperties calc
        */
       computeTextareaProperties() {
+
+        this.computeSVGTextProperties();
+
         let viewboxStyles = getComputedStyle(this.svgTextEl);
         let viewboxBBox = this.svgTextEl.getBBox();
         let elem = this.svgTextEl.closest('[transform^="scale"]') || this.svgTextEl.ownerSVGElement;
@@ -266,9 +297,14 @@
           height: viewboxBBox.height,
           lineHeight: 'normal',
           topOffset: viewboxBBox.y,
-          initialHeight: this._textareaProperties.initialHeight || viewboxBBox.height
+
+          top: this._svgTextElProperties.top,
+          left: this._svgTextElProperties.left
         });
 
+        // console.log('this._textareaProperties.initialHeight');
+        // console.log(this._textareaProperties.initialHeight);
+        // console.log('................')
 
         // handle transform separately for Firefox
         // getComputedStyle doesn't return the inherited `transform` object in Firefox.
@@ -318,7 +354,7 @@
       }
 
       log() {
-        let props = this.getElementProperties(this.svgTextEl);
+        let props = this.getElementClientRect(this.svgTextEl);
         let ta = {};
         if (this._textarea)
           ta = this._textarea.getBoundingClientRect();
@@ -344,8 +380,8 @@
         if (flag) {
           let ta = this.getTextarea();
 
+
           this.computeTextareaProperties();
-          this.computeSVGTextProperties();
 
           this.positionTextarea();
           this.shadowRoot.appendChild(ta);
@@ -372,29 +408,32 @@
       }
 
       positionTextarea() {
-        let styles;
-        if (this._textareaProperties.top) {
-          styles = { top: this._textareaProperties.top, left: this._textareaProperties.left };
-        } else {
-          styles = { top: this._svgTextElProperties.top, left: this._svgTextElProperties.left };
-        }
-        Object.assign(this._textarea.style, this.convertToCSS(styles), this.convertToCSS(this._textareaProperties));
+        // let styles;
+        // if (this._textareaProperties.top) {
+        // styles = { top: this._textareaProperties.top, left: this._textareaProperties.left };
+        // } else {
+        // console.error('I should not be here!');
+        // styles = { top: this._svgTextElProperties.top, left: this._svgTextElProperties.left };
+        // }
+        // Object.assign(this._textarea.style, this.convertToCSS(styles), this.convertToCSS(this._textareaProperties));
+
+        Object.assign(this._textarea.style, this.convertToCSS(this._textareaProperties));
       }
 
-      adjustTextareaPosition(ta) {
-        if (!this._textareaProperties.top) {
-          let adjustment = this._svgTextElProperties.height - ta.getBoundingClientRect().height;
-          this._textareaProperties.top = this._svgTextElProperties.top + adjustment;
-          this._textareaProperties.left = this._svgTextElProperties.left;
+      // adjustTextareaPosition(ta) {
+      //   if (!this._textareaProperties.top) {
+      //     let adjustment = this._svgTextElProperties.height - ta.getBoundingClientRect().height;
+      //     this._textareaProperties.top = this._svgTextElProperties.top + adjustment;
+      //     this._textareaProperties.left = this._svgTextElProperties.left;
 
-          // apply user adjustments
-          this.applyUserAdjustments();
+      //     // apply user adjustments
+      //     this.applyUserAdjustments();
 
-          // apply browser rounding for height values as different browsers handle it differently
-          this._textareaProperties.top = this.applyBrowserRounding(this._textareaProperties.top);
-        }
-        Object.assign(ta.style, this.convertToCSS({ top: this._textareaProperties.top, left: this._textareaProperties.left }));
-      }
+      //     // apply browser rounding for height values as different browsers handle it differently
+      //     this._textareaProperties.top = this.applyBrowserRounding(this._textareaProperties.top);
+      //   }
+      //   Object.assign(ta.style, this.convertToCSS({ top: this._textareaProperties.top, left: this._textareaProperties.left }));
+      // }
 
       // if user specific offsets are set, add those in.
       applyUserAdjustments() {
@@ -452,7 +491,8 @@
           return;
         }
 
-        this.createSVGText(this.content, parseFloat(this._textareaProperties.width));
+        this._textlines = this.getTextLines(this.content, parseFloat(this._textareaProperties.width));
+        this.createSVGText(this._textlines);
 
         // destroy the textarea
         if (this._textarea) {
@@ -464,11 +504,7 @@
       /**
       * Returns the svg text element with multiline text as per width specified
       */
-      createSVGText(text, width) {
-        let str = this.getMultilineText(text, width);
-
-        let textLines = str.split('\n');
-
+      createSVGText(textLines) {
         textLines.map(key => {
           this.addText(key);
         });
@@ -544,13 +580,13 @@
       }
 
       // get position of the element
-      getElementProperties(el) {
+      getElementClientRect(el) {
         el = el.getBoundingClientRect();
         return {
           left: el.left + window.pageXOffset,
           top: el.top + window.pageYOffset,
-          bottom: el.bottom + window.pageYOffset,
           right: el.right + window.pageXOffset,
+          bottom: el.bottom + window.pageYOffset,
           height: el.height,
           width: el.width
         };
