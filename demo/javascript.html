@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+  <title>svg-textarea demo</title>
+
+  <script src="../../webcomponentsjs/webcomponents-loader.js"></script>
+
+  <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+  <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+  <!-- <link rel="import" href="../svg-textarea.html"> -->
+  <link rel="import" href="../svg-editable-text.html">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700">
+
+  <style>
+    /* body {
+      font-family: 'Open Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;      
+    } */
+
+    .svgcontent {
+      overflow: visible;
+      padding: 0px;
+    }
+
+    #svgcontent1 {
+      font-size: 16px;
+      height: 50px;
+      /* border: 1px solid #4691CF */
+    }
+
+    #svgcontent2 {
+      font-size: 27px;
+      height: 80px;
+      border: 2px solid red;
+    }
+
+    #svgcontent3 {
+      font-size: 51px;
+      height: 120px;
+      border: 5px solid green;
+    }
+
+    #svgcontent4,
+    #svgcontent5 {
+      font-size: 77px;
+      height: 150px;
+      border: 1px solid #4691CF;
+    }
+  </style>
+  <custom-style>
+    <style is="custom-style" include="demo-pages-shared-styles">
+      body {
+        font-family: 'Open Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </custom-style>
+
+  <script>
+    // adjustment for 16px font
+    var adjustments1 = {
+      'Firefox': {
+        top: -0.3,
+        left: 0.9
+      },
+      'Safari': {
+        top: 0.3
+      }
+    }
+
+    // adjustment for 27px & 51px font
+    var adjustments2 = {
+      'Firefox': {
+        left: 0.4
+      },
+      'Safari': {
+        top: 0.3
+      }
+    }
+
+    window.addEventListener('WebComponentsReady', function (e) {
+      // console.log(SvgEditbleText.getAll()[0]);
+      var o = new SvgEditbleText();
+      o.init(o.getAll()[0]);
+    });    
+  </script>
+
+</head>
+
+<body>
+
+  <svg id="svgcontent1" class="svgcontent" width="100">
+    <text id="svgtext1" x="0" y="17" editable>simple text</text>
+  </svg>
+
+</body>
+
+</html>
