@@ -29,6 +29,7 @@
   }
 </style>
 
+<script src="utils.js"></script>
 <script>
 
   class LinebreakMixin {
@@ -118,7 +119,7 @@
   }
 
 
-  class SvgEditbleText extends LinebreakMixin {
+  class SvgEditableText extends LinebreakMixin {
 
     constructor() {
       super();
@@ -245,20 +246,29 @@
 
       let _textlines = this.getTextLines(element.content, parseFloat(element._textareaProperties.width));
 
-      this.computeSVGInitialLineHeight(element, _textlines.shift());
-
-      this.createSVGText(element, _textlines);
+      this.computeSVGInitialLineHeight(element, _textlines.shift(), () => {
+        this.createSVGText(element, _textlines);
+      });
 
     }
 
-    computeSVGInitialLineHeight(element, text) {
+    computeSVGInitialLineHeight(element, text, callback) {
       this.addText(element, text);
-      let viewboxBBox = element.getBBox();
-      Object.assign(element._textareaProperties, {
-        height: viewboxBBox.height,
-        topOffset: viewboxBBox.y,
-        initialHeight: viewboxBBox.height
-      });
+      setTimeout(() => {
+        let viewboxBBox = element.getBBox();
+        Object.assign(element._textareaProperties, {
+          height: viewboxBBox.height,
+          topOffset: viewboxBBox.y,
+          initialHeight: viewboxBBox.height
+        });
+
+        // if (this._browser === 'Chrome') {
+        //   Object.assign(this._textareaProperties, {
+        //     initialHeight: viewboxBBox.height
+        //   });
+        // }
+        callback();
+      }, 10);
     }
 
     getTextLines(text, width) {
@@ -318,9 +328,12 @@
       // handle transform separately for Firefox
       // getComputedStyle doesn't return the inherited `transform` object in Firefox.
       if (this._browser === 'Firefox') {
-        Object.assign(element._textareaProperties, {
-          transform: elem.transform.baseVal[0].matrix
-        });
+        let baseVal = elem.transform.baseVal[0];
+        if (baseVal) {
+          Object.assign(this._textareaProperties, {
+            transform: elem.transform.baseVal[0].matrix
+          });
+        }
       }
 
     }
@@ -409,8 +422,8 @@
         this._textarea.rows = '1';
         this._textarea.id = 'textarea';
         this._textarea.value = element.content || '';
-        this._textarea.addEventListener('blur', () => this.handleBlur(element, event));
-        this._textarea.addEventListener('input', () => this.resizeTextarea(element, event));
+        this._textarea.addEventListener('blur', (e) => this.handleBlur(element, e));
+        this._textarea.addEventListener('input', (e) => this.resizeTextarea(element, e));
       }
       return this._textarea;
     }
@@ -624,4 +637,3 @@
   // };
 
 </script>
-<script src="utils.js"></script>

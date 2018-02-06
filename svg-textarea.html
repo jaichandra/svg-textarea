@@ -35,7 +35,7 @@
       }
     </style>
   </template>
-
+  <script src="utils.js"></script>
   <script>
     /**
     * `svg-textarea`
@@ -232,20 +232,29 @@
 
         this._textlines = this.getTextLines(this.content, parseFloat(this._textareaProperties.width));
 
-        this.computeSVGInitialLineHeight(this._textlines.shift());
-
-        this.createSVGText(this._textlines);
+        this.computeSVGInitialLineHeight(this._textlines.shift(), () => {
+          this.createSVGText(this._textlines);
+        });
 
       }
 
-      computeSVGInitialLineHeight(text) {
+      computeSVGInitialLineHeight(text, callback) {
         this.addText(text);
-        let viewboxBBox = this.svgTextEl.getBBox();
-        Object.assign(this._textareaProperties, {
-          height: viewboxBBox.height,
-          topOffset: viewboxBBox.y,
-          initialHeight: viewboxBBox.height
-        });
+        setTimeout(() => {
+          let viewboxBBox = this.svgTextEl.getBBox();
+          Object.assign(this._textareaProperties, {
+            height: viewboxBBox.height,
+            topOffset: viewboxBBox.y,
+            initialHeight: viewboxBBox.height
+          });
+
+          // if (this._browser === 'Chrome') {
+          //   Object.assign(this._textareaProperties, {
+          //     initialHeight: viewboxBBox.height
+          //   });
+          // }
+          callback();
+        }, 10);
       }
 
       getTextLines(text, width) {
@@ -309,9 +318,12 @@
         // handle transform separately for Firefox
         // getComputedStyle doesn't return the inherited `transform` object in Firefox.
         if (this._browser === 'Firefox') {
-          Object.assign(this._textareaProperties, {
-            transform: elem.transform.baseVal[0].matrix
-          });
+          let baseVal = elem.transform.baseVal[0];
+          if (baseVal) {
+            Object.assign(this._textareaProperties, {
+              transform: elem.transform.baseVal[0].matrix
+            });
+          }
         }
 
       }
@@ -641,5 +653,5 @@
 
     window.customElements.define(SvgTextarea.is, SvgTextarea);
   </script>
-  <script src="utils.js"></script>
+
 </dom-module>

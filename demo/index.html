@@ -64,27 +64,28 @@
   <script>
     // adjustment for 16px font
     var adjustments1 = {
-      'Firefox': {
-        top: -0.3,
-        left: 0.9
-      },
-      'Safari': {
-        top: 0.3
-      }
+      // 'Firefox': {
+      //   top: -0.3,
+      //   left: 0.9
+      // },
+      // 'Safari': {
+      //   top: 0.3
+      // }
     }
 
     // adjustment for 27px & 51px font
     var adjustments2 = {
-      'Firefox': {
-        left: 0.4
-      },
-      'Safari': {
-        top: 0.3
-      }
+      // 'Firefox': {
+      //   left: 0.4
+      // },
+      // 'Safari': {
+      //   top: 0.3
+      // }
     }
 
     window.addEventListener('WebComponentsReady', function (e) {
-      // var ta1 = document.getElementById('ta1');
+      var ta1 = document.getElementById('ta1');
+      ta1.content = "Simple \ntext";
       // ta1.adjustments = adjustments1;
 
       // dynamically create svgTextarea
@@ -111,7 +112,7 @@
 <body>
 
   <svg id="svgcontent1" class="svgcontent" width="100">
-    <text id="svgtext1" x="0" y="17">Simple text</text>
+    <text id="svgtext1" x="0" y="17"></text>
   </svg>
   <svg-textarea id="ta1" svg-text-id="svgtext1"></svg-textarea>
 
