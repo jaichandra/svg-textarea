@@ -1,0 +1,30 @@
+{
+  "name": "svg-textarea",
+  "version": "1.0.0",
+  "description":
+    "A module for converting any SVG <text> element into an editable multi-line textarea.",
+  "main": "svg-editable-text.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "start": "rollup -c -w | lite-server -c bs-config.json",
+    "build": "rollup -c",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaichandra/svg-textarea.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jaichandra/svg-textarea/issues"
+  },
+  "homepage": "https://github.com/jaichandra/svg-textarea#readme",
+  "devDependencies": {
+    "lite-server": "^2.3.0",
+    "rollup": "^0.55.3",
+    "rollup-plugin-copy": "^0.2.3"
+  }
+}

@@ -1,0 +1,83 @@
+export const LinebreakMixin = superclass => {
+  return class extends superclass {
+    /**
+     * Returns multiline content after applying line breaks (\n) based on the provided width
+     */
+    getMultilineText(strRawValue, width) {
+      var nlRegex = /\r\n|\n\r|\n|\r/g;
+      var lines = strRawValue.replace(nlRegex, '\n').split('\n');
+
+      var testElem = document.createElement('div');
+      Object.assign(testElem.style, this._textareaProperties, {
+        position: 'absolute',
+        left: '350px',
+        top: '40px',
+        width: width + 'px',
+        whiteSpace: 'nowrap'
+      });
+      document.body.appendChild(testElem);
+      var nEmptyWidth = testElem.scrollWidth;
+
+      var nLastWrappingIndex = -1;
+
+      function testBreak(strTest) {
+        testElem.textContent = strTest;
+        return testElem.scrollWidth > nEmptyWidth;
+      }
+
+      function findNextBreakLength(strSource, nLeft, nRight) {
+        var nCurrent;
+        if (typeof nLeft == 'undefined') {
+          nLeft = 0;
+          nRight = -1;
+          nCurrent = 64;
+        } else {
+          if (nRight == -1) nCurrent = nLeft * 2;
+          else if (nRight - nLeft <= 1) return Math.max(2, nRight);
+          else nCurrent = nLeft + (nRight - nLeft) / 2;
+        }
+        var strTest = strSource.substr(0, nCurrent);
+        var bLonger = testBreak(strTest);
+        if (bLonger) nRight = nCurrent;
+        else {
+          if (nCurrent >= strSource.length) return null;
+          nLeft = nCurrent;
+        }
+        return findNextBreakLength(strSource, nLeft, nRight);
+      }
+
+      var strNewValue = '';
+      var len = lines.length;
+      for (var index = 0; index < len; index++) {
+        var lineRawValue = lines[index];
+        var i = 0,
+          j;
+        var lineNewValue = '';
+        while (i < lineRawValue.length) {
+          var breakOffset = findNextBreakLength(lineRawValue.substr(i));
+          if (breakOffset === null) {
+            lineNewValue += lineRawValue.substr(i);
+            break;
+          }
+          nLastWrappingIndex = -1;
+          var nLineLength = breakOffset - 1;
+          for (j = nLineLength - 1; j >= 0; j--) {
+            var curChar = lineRawValue.charAt(i + j);
+            if (curChar == ' ' || curChar == '-' || curChar == '+') {
+              nLineLength = j + 1;
+              break;
+            }
+          }
+          lineNewValue += lineRawValue.substr(i, nLineLength) + '\n';
+          i += nLineLength;
+        }
+        strNewValue += lineNewValue + '\n';
+      }
+      // remove last \n
+      strNewValue = strNewValue.replace(/\n$/, '');
+
+      document.body.removeChild(testElem);
+      return strNewValue;
+    }
+  };
+};

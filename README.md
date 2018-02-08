@@ -1,23 +1,38 @@
 # \<svg-textarea\>
 
-A Polymer 2 element for converting any SVG <text> element into an editable multi-line textarea.
+A library for making any SVG <text> element into an editable multi-line text.
 
 ## Usage
 
-Add `<svg-textarea>` element as a sibling to the `svg` container. Pass the ID of the SVG `<text>` element to `svg-textarea` to make it editable.
+Include below `css` and `javascript` files to the html page
 
 ```
-<svg width="100%" style="border: 1px solid red">
-    <text id="svgtext"></text>
+<link rel="stylesheet" href="./dist/svg-editable-text.min.css">
+<script src="./dist/svg-editable-text.min.js"></script>
+```
+
+Initialize the plugin at the end of the `body` tag. This ensures that the DOM is ready.
+
+```
+var o = new SvgEditableText();
+```
+
+Add `editable` attributes to the SVG Text elements that need to be made editable.
+
+Example:
+
+```
+<svg width="100%">
+    <text editable>Simple Text</text>
 </svg>
 
-<svg-textarea svg-text-id="svgtext"></svg-textarea>
+<script>
+  var o = new SvgEditableText();
+</script>
 ```
 
 ## Properties
 
-* `svg-text-id`: The id of the svg `<text>` element.
-* `content`: returns the text content
 * `adjustments`: The component is adjusted to `Open Sans` Google font and works pretty well for font sizes between 10-50px. However depending on your `font-family` and `font-size`, you might notice some shift in text when edit mode is enabled. Use the `adjustments` property to pass the `top` and `left` position for each browser (`Chrome`, `Firefox`, `MSIE`, `Safari`). You can pass `+ve` or `-ve` values. These values are relative to the current position of textarea.
 
 ```
@@ -30,6 +45,7 @@ Add `<svg-textarea>` element as a sibling to the `svg` container. Pass the ID of
     }
   }
 ```
+
 Checkout the demo for examples.
 
 ## Browser compatibility

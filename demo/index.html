@@ -7,160 +7,90 @@
 
   <title>svg-textarea demo</title>
 
-  <script src="../../webcomponentsjs/webcomponents-loader.js"></script>
-
-  <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-  <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
-  <link rel="import" href="../svg-textarea.html">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700">
+  <link rel="stylesheet" href="../dist/svg-editable-text.min.css">
+  <script src="../dist/svg-editable-text.min.js"></script>
 
   <style>
-    /* body {
-      font-family: 'Open Sans', sans-serif;
-      -webkit-font-smoothing: antialiased;      
-    } */
-
-    .svgcontent {
+    .svg {
       overflow: visible;
       padding: 0px;
     }
 
-    #svgcontent1 {
+    #svg1 {
       font-size: 16px;
-      height: 50px;
-      /* border: 1px solid #4691CF */
     }
 
-    #svgcontent2 {
+    #svg2 {
       font-size: 27px;
       height: 80px;
       border: 2px solid red;
     }
 
-    #svgcontent3 {
+    /* #svg3 {
       font-size: 51px;
       height: 120px;
       border: 5px solid green;
-    }
+    } */
 
-    #svgcontent4,
-    #svgcontent5 {
+    #svg4,
+    #svg5 {
       font-size: 77px;
       height: 150px;
       border: 1px solid #4691CF;
     }
   </style>
-  <custom-style>
-    <style is="custom-style" include="demo-pages-shared-styles">
-      body {
-        font-family: 'Open Sans', sans-serif;
-        -webkit-font-smoothing: antialiased;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-  </custom-style>
-
-  <script>
-    // adjustment for 16px font
-    var adjustments1 = {
-      // 'Firefox': {
-      //   top: -0.3,
-      //   left: 0.9
-      // },
-      // 'Safari': {
-      //   top: 0.3
-      // }
-    }
-
-    // adjustment for 27px & 51px font
-    var adjustments2 = {
-      // 'Firefox': {
-      //   left: 0.4
-      // },
-      // 'Safari': {
-      //   top: 0.3
-      // }
-    }
-
-    window.addEventListener('WebComponentsReady', function (e) {
-      var ta1 = document.getElementById('ta1');
-      ta1.content = "Simple \ntext";
-      // ta1.adjustments = adjustments1;
-
-      // dynamically create svgTextarea
-      var ta2 = document.getElementById('ta2');
-      ta2.svgTextEl = document.getElementById('svgtext2');
-      ta2.adjustments = adjustments2;
-
-      var ta3 = document.getElementById('ta3');
-      ta3.adjustments = adjustments2;
-
-      // dynamically create svgTextarea
-      var ta4 = new SvgTextarea();
-      ta4.svgTextId = 'svgtext4';
-      document.body.appendChild(ta4);
-
-      var ta5 = new SvgTextarea();
-      document.body.appendChild(ta5);
-      ta5.svgTextEl = document.getElementById('svgtext5');
-    });
-  </script>
-
 </head>
 
 <body>
 
-  <svg id="svgcontent1" class="svgcontent" width="100">
-    <text id="svgtext1" x="0" y="17"></text>
+  <svg id="svg1" class="svgcontent" width="300">
+    <text id="svgtext1" x="0" y="37" editable>Simple Text</text>
   </svg>
-  <svg-textarea id="ta1" svg-text-id="svgtext1"></svg-textarea>
 
-  <div class="vertical-section-container centered">
-    <h3>Inside another web component</h3>
-    <demo-snippet>
-      <template>
-        <svg-textarea id="ta2"></svg-textarea>
-        <svg id="svgcontent2" class="svgcontent">
-          <text id="svgtext2" y="24">tst</text>
-        </svg>
-      </template>
-    </demo-snippet>
-  </div>
+  <!-- <p></p>
   <p></p>
-  <p></p>
-  <div>
-    <h3>Inside Div</h3>
-    <div>
-      <svg id="svgcontent3" class="svgcontent">
-        <text id="svgtext3" y="50"></text>
-      </svg>
-      <svg-textarea id="ta3" svg-text-id="svgtext3"></svg-textarea>
 
-    </div>
-  </div>
+  <svg id="svg2" class="svgcontent">
+    <text id="svgtext2" y="24" editable>tst</text>
+  </svg>
 
   <p></p>
   <p></p>
-  <div>
-    <h3>Dynamically added svg-textarea</h3>
-    <div>
-      <svg id="svgcontent4" class="svgcontent">
-        <text id="svgtext4" y="50"></text>
-      </svg>
-    </div>
-  </div>
 
-  <p></p>
-  <p></p>
-  <div>
-    <h3>Dynamically added svg-textarea2</h3>
-    <div>
-      <svg id="svgcontent5" class="svgcontent">
-        <text id="svgtext5" y="50"></text>
-      </svg>
-    </div>
-  </div>
+  <svg id="svg3" width="180" height="200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <rect x="50" y="50" height="100" width="100" style="stroke:#000; fill: #0086B2" fill-opacity=0.2 stroke-opacity=0.2></rect>
+
+    <rect x="50" y="50" height="100" width="100" style="stroke:#000; fill: #0086B2" transform="translate(30) rotate(45 50 50)"></rect>
+    <text id="svgtext3" editable x="60" y="105" transform="translate(30) rotate(45 50 50)"> Hello Moz! </text>
+
+  </svg> -->
+
+  <script>
+    // adjustment for 16px font
+    var adjustments1 = {
+      'Firefox': {
+        top: -0.3,
+        left: 0.9
+      },
+      'Safari': {
+        top: 0.3
+      }
+    }
+
+    // adjustment for 27px & 51px font
+    var adjustments2 = {
+      'Firefox': {
+        left: 0.4
+      },
+      'Safari': {
+        top: 0.3
+      }
+    }
+
+    // var o = new SvgEditableText();
+    // document.getElementById('svgtext3').rotation = 45;
+  </script>
 </body>
 
 </html>

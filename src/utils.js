@@ -11,7 +11,7 @@ Element.prototype.closest = function(selector) {
   return matches ? parentNode : null;
 };
 
-function getBrowser() {
+export function getBrowser() {
   let sUsrAg = navigator.userAgent;
   if (sUsrAg.indexOf('Chrome') > -1) {
     return 'Chrome';
@@ -29,7 +29,7 @@ function getBrowser() {
   }
 }
 
-function getOS() {
+export function getOS() {
   let sAppVer = navigator.appVersion;
   if (sAppVer.indexOf('Win') != -1) {
     return 'Win';

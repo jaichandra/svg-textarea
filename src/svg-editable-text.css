@@ -1,0 +1,28 @@
+/* :host {
+    display: block;
+    font-size: var(--svg-textarea-font-size, inherit);
+    height: var(--svg-textarea-height);
+  } */
+
+#textarea {
+  font-family: inherit;
+  font-size: inherit;
+  border: 0px solid transparent;
+  background-color: transparent;
+  overflow: hidden;
+  position: absolute;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  transform: none;
+  transform-origin: 0px 0px;
+  line-height: 1.2;
+  resize: none;
+}
+
+@-moz-document url-prefix() {
+  #textarea {
+    padding: 0 2px;
+    margin: 1px 0;
+  }
+}
